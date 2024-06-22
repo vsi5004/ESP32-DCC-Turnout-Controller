@@ -7,3 +7,4 @@
 # webapp
 /data
 
+react-websocket-client/dist/stats.html
