@@ -1,21 +1,13 @@
 import "./App.css";
-import { IMessageEvent, w3cwebsocket } from "websocket";
 import { useState, useEffect, useRef, useCallback } from "react";
 import Button from "@mui/material/Button";
 import Fab from "@mui/material/Fab";
 import AddIcon from "@mui/icons-material/Add";
-import Alert from "@mui/material/Alert";
 import Snackbar from "@mui/material/Snackbar";
-import Turnout from "./Turnout";
-
-interface TurnoutSetting {
-  id: number;
-  address: number;
-  closedEndpoint: number;
-  openEndpoint: number;
-  reversed: boolean;
-  testInProgress?: boolean;
-}
+import Alert from "@mui/material/Alert";
+import TurnoutList from "./TurnoutList";
+import { IMessageEvent, w3cwebsocket } from "websocket";
+import { TurnoutSetting } from "./types";
 
 function App() {
   const websocket = useRef<w3cwebsocket | null>(null);
@@ -53,6 +45,7 @@ function App() {
           setLED(dataFromServer.LED);
         } else if (dataFromServer.type === "turnoutsList") {
           setTurnoutSettings(dataFromServer.turnouts);
+          setAlert({ message: "Turnouts list updated", severity: "success", open: true });
         } else if (dataFromServer.type === "turnoutTestComplete") {
           handleTestComplete(dataFromServer.settings.id);
         }
@@ -66,42 +59,26 @@ function App() {
     };
   }, []);
 
-  const sendUpdate = useCallback(({ led }: { led: boolean }) => {
+  const sendMessage = (message: object) => {
     if (websocket.current?.readyState === w3cwebsocket.OPEN) {
-      websocket.current.send(
-        JSON.stringify({
-          type: "message",
-          LED: led,
-        })
-      );
+      websocket.current.send(JSON.stringify(message));
     } else {
       console.error("WebSocket is not open");
     }
+  };
+
+  const sendUpdate = useCallback(({ led }: { led: boolean }) => {
+    sendMessage({ type: "message", LED: led });
   }, []);
 
-  const sendTurnoutSettings = useCallback(() => {
-    if (websocket.current?.readyState === w3cwebsocket.OPEN) {
-      websocket.current.send(
-        JSON.stringify({
-          type: "turnoutSettings",
-          settings: turnoutSettings,
-        })
-      );
-    } else {
-      console.error("WebSocket is not open");
-    }
-  }, [turnoutSettings]);
+  const sendTurnoutSetting = useCallback((setting: TurnoutSetting) => {
+    sendMessage({ type: "turnoutSettings", settings: setting });
+  }, []);
 
   const sendTurnoutTest = useCallback((id: number) => {
-    if (websocket.current?.readyState === w3cwebsocket.OPEN) {
-      websocket.current.send(
-        JSON.stringify({
-          type: "turnoutTest",
-          settings: turnoutSettings.find((setting) => setting.id === id),
-        })
-      );
-    } else {
-      console.error("WebSocket is not open");
+    const setting = turnoutSettings.find((s) => s.id === id);
+    if (setting) {
+      sendMessage({ type: "turnoutTest", settings: setting });
     }
   }, [turnoutSettings]);
 
@@ -123,9 +100,9 @@ function App() {
         closedEndpoint: 0,
         openEndpoint: 180,
         reversed: false,
+        testInProgress: false,
       };
-      setTurnoutSettings((prevSettings) => [...prevSettings, newTurnout]);
-      setAlert({ message: `Added Turnout ${newTurnout.id + 1}`, severity: "success", open: true });
+      sendMessage({ type: "turnoutSettings", settings: newTurnout });
     } else {
       setAlert({ message: "Device supports a maximum of 12 turnouts, delete existing turnout before you add another", severity: "warning", open: true });
     }
@@ -154,10 +131,10 @@ function App() {
           {LED ? "Turn Off" : "Turn On"}
         </Button>
         <p>{isConnected ? "Connected" : "Disconnected"}</p>
-        <Turnout
+        <TurnoutList
           turnoutSettings={turnoutSettings}
           handleChange={handleChange}
-          sendTurnoutSettings={sendTurnoutSettings}
+          sendTurnoutSetting={sendTurnoutSetting}
           sendTurnoutTest={sendTurnoutTest}
           isConnected={isConnected}
         />
@@ -171,7 +148,7 @@ function App() {
         </Fab>
         <Snackbar
           open={alert.open}
-          autoHideDuration={3000}
+          autoHideDuration={2000}
           onClose={handleCloseAlert}
           anchorOrigin={{ vertical: "top", horizontal: "center" }}
         >
