@@ -7,7 +7,8 @@ import {
   Switch,
   Button,
   Typography,
-  Box
+  Box,
+  CircularProgress
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
@@ -68,7 +69,7 @@ const Turnout: React.FC<TurnoutProps> = ({
                 onChange={(_e, values) => handleSliderChange(turnout.id, values as number[])}
                 step={1}
                 min={0}
-                max={180}
+                max={100}
                 valueLabelDisplay="on"
               />
               <Box display="flex" alignItems="center" gap={1}>
@@ -78,13 +79,19 @@ const Turnout: React.FC<TurnoutProps> = ({
                   onChange={(e) => handleChange(turnout.id, "reversed", e.target.checked)}
                 />
               </Box>
-              <Button
-                variant="contained"
-                onClick={() => handleTestServoRange(turnout.id)}
-                disabled={!isConnected || turnout.testInProgress}
-              >
-                Test Servo Range
-              </Button>
+              {turnout.testInProgress ? (
+                <Box display="flex" justifyContent="center" alignItems="center">
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <Button
+                  variant="contained"
+                  onClick={() => handleTestServoRange(turnout.id)}
+                  disabled={!isConnected}
+                >
+                  Test Servo Range
+                </Button>
+              )}
               <Button
                 variant="contained"
                 onClick={sendTurnoutSettings}
