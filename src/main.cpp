@@ -19,6 +19,12 @@ AsyncWebSocket websocket("/ws");
 
 TurnoutManager turnoutManager;
 
+void startWifi();
+void initFileSystem();
+void configWifi();
+void initWifi();
+void startWebsocketServer();
+
 void redirectToIndex(AsyncWebServerRequest *request)
 {
   request->redirect("http://" + apIP.toString());
