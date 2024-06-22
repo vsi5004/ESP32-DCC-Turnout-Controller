@@ -18,9 +18,8 @@ void wsEventHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEve
     for (int i = 0; i < len; ++i)
       dataBuffer[i] = data[i];
     dataBuffer[len] = '\0';
-#ifdef VERBOSE
     Serial.println(dataBuffer);
-#endif
+
     // parse the recieved json data
     DeserializationError error = deserializeJson(recievedJson, (char *)data, len);
     if (error)
@@ -29,17 +28,37 @@ void wsEventHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEve
       Serial.println(error.f_str());
       return;
     }
-    if (strcmp(recievedJson["type"], "message") != 0)
-      return;
-    // get the target LED state
-    bool led = recievedJson["LED"];
-    digitalWrite(2, led);
-    // send ACK
-    client->text(dataBuffer, len);
-    // alert all other clients
-    for (int i = 0; i < 16; ++i)
-      if (clients[i] != NULL && clients[i] != client)
-        clients[i]->text(dataBuffer, len);
+    if (strcmp(recievedJson["type"], "message") == 0)
+    {
+      // get the target LED state
+      bool led = recievedJson["LED"];
+      digitalWrite(2, led);
+      // send ACK
+      client->text(dataBuffer, len);
+      // alert all other clients
+      for (int i = 0; i < 16; ++i)
+        if (clients[i] != NULL && clients[i] != client)
+          clients[i]->text(dataBuffer, len);
+    }
+    else if (strcmp(recievedJson["type"], "getTurnouts") == 0)
+    {
+      strcpy(dataBuffer, "{\"type\":\"turnoutsList\",\"turnouts\":[]}");
+      client->text(dataBuffer);
+    }
+    else if (strcmp(recievedJson["type"], "turnoutTest") == 0)
+    {
+      recievedJson["type"] = "turnoutTestComplete";
+      String jsonString;
+      serializeJson(recievedJson, jsonString);
+      jsonString.toCharArray(dataBuffer, BUFFER_SIZE);
+      client->text(dataBuffer);
+      Serial.print("Sent data: ");
+      Serial.println(dataBuffer);
+    }
+    else
+    {
+      Serial.println("Unknown message type");
+    }
   }
   else if (type == WS_EVT_CONNECT)
   {
