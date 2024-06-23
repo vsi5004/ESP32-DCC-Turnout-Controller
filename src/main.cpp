@@ -1,11 +1,11 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <DNSServer.h>
-#include <LittleFS.h>
 #include <ESPAsyncWebServer.h>
-#include "wsEventHandler.h"
-#include "Turnout.h"
-#include "TurnoutManager.h"
+#include <LittleFS.h>
+#include <WSEventHandler.h>
+#include <Turnout.h>
+#include <TurnoutManager.h>
 
 #define SSID "ESP32 DCC Turnout Controller"
 #define DNS_PORT 53
@@ -45,7 +45,7 @@ void setup()
 
 void startWebsocketServer()
 {
-  websocket.onEvent(wsEventHandler);
+  websocket.onEvent(WSEventHandler);
   server.addHandler(&websocket);
   server.serveStatic("/", LittleFS, "/www/").setDefaultFile("index.html");
   server.onNotFound(redirectToIndex);

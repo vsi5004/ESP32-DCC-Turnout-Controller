@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ESPAsyncWebServer.h>
-#include "wsEventHandler.h"
+#include "WSEventHandler.h"
 #include "Turnout.h"
 #include "TurnoutManager.h"
 
@@ -15,7 +15,7 @@ AsyncWebSocketClient *clients[16] = {nullptr};
 // External reference to TurnoutManager instance
 extern TurnoutManager turnoutManager;
 
-void wsEventHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
+void WSEventHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
 {
   if (type == WS_EVT_DATA)
   {
