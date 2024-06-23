@@ -5,10 +5,10 @@ on:
     branches:
       - '**'
     tags:
-      - 'v*'
+      - '**'
 
 jobs:
-  build:
+  setup:
     runs-on: ubuntu-latest
 
     steps:
@@ -35,12 +35,6 @@ jobs:
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
 
-      - name: Build PlatformIO Firmware
-        run: pio run
-
-      - name: Build PlatformIO Filesystem Image
-        run: pio run --target uploadfs --environment esp32dev
-
       - name: Get version from tag or commit
         id: get_version
         run: |
@@ -49,7 +43,28 @@ jobs:
           else
             COMMIT_SHORT=$(echo $GITHUB_SHA | cut -c1-7)
             echo "RELEASE_VERSION=commit-${COMMIT_SHORT}" >> $GITHUB_ENV
-          fi
+
+      - name: Upload environment info
+        uses: actions/upload-artifact@v4
+        with:
+          name: env-info
+          path: ${{ env.RELEASE_VERSION }}
+
+  build-firmware:
+    runs-on: ubuntu-latest
+    needs: setup
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download environment info
+        uses: actions/download-artifact@v4
+        with:
+          name: env-info
+
+      - name: Build PlatformIO Firmware
+        run: pio run
 
       - name: Upload PlatformIO Firmware Artifacts
         uses: actions/upload-artifact@v4
@@ -59,6 +74,22 @@ jobs:
             .pio/build/*/*.bin
             .pio/build/*/*.elf
             .pio/build/*/*.hex
+
+  build-filesystem:
+    runs-on: ubuntu-latest
+    needs: setup
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download environment info
+        uses: actions/download-artifact@v4
+        with:
+          name: env-info
+
+      - name: Build PlatformIO Filesystem Image
+        run: pio run --target buildfs --environment esp32dev
 
       - name: Upload PlatformIO Filesystem Image Artifacts
         uses: actions/upload-artifact@v4
