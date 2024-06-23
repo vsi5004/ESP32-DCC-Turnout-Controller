@@ -32,7 +32,6 @@ void redirectToIndex(AsyncWebServerRequest *request)
 
 void setup()
 {
-  pinMode(2, OUTPUT);
   Serial.begin(115200);
 
   initWifi();

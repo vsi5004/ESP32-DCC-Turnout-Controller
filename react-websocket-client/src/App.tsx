@@ -1,6 +1,5 @@
 import "./App.css";
 import { useState, useEffect, useRef, useCallback } from "react";
-import Button from "@mui/material/Button";
 import Fab from "@mui/material/Fab";
 import AddIcon from "@mui/icons-material/Add";
 import Snackbar from "@mui/material/Snackbar";
@@ -11,7 +10,6 @@ import { TurnoutSetting } from "./types";
 
 function App() {
   const websocket = useRef<w3cwebsocket | null>(null);
-  const [LED, setLED] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [turnoutSettings, setTurnoutSettings] = useState<TurnoutSetting[]>([]);
   const [alert, setAlert] = useState<{ message: string; severity: "success" | "warning" | "info" | "error"; open: boolean }>({
@@ -41,9 +39,7 @@ function App() {
     websocket.current.onmessage = (message: IMessageEvent) => {
       try {
         const dataFromServer = JSON.parse(message.data.toString());
-        if (dataFromServer.type === "message") {
-          setLED(dataFromServer.LED);
-        } else if (dataFromServer.type === "turnoutsList") {
+        if (dataFromServer.type === "turnoutsList") {
           setTurnoutSettings(dataFromServer.turnouts);
           setAlert({ message: "Turnouts list updated", severity: "success", open: true });
         } else if (dataFromServer.type === "turnoutTestComplete") {
@@ -67,10 +63,6 @@ function App() {
     }
   };
 
-  const sendUpdate = useCallback(({ led }: { led: boolean }) => {
-    sendMessage({ type: "message", LED: led });
-  }, []);
-
   const sendTurnoutSetting = useCallback((setting: TurnoutSetting) => {
     sendMessage({ type: "turnoutSettings", settings: setting });
   }, []);
@@ -81,8 +73,6 @@ function App() {
       sendMessage({ type: "turnoutTest", settings: setting });
     }
   }, [turnoutSettings]);
-
-  const toggleLed = useCallback(() => sendUpdate({ led: !LED }), [LED, sendUpdate]);
 
   const handleChange = (id: number, field: string, value: any) => {
     setTurnoutSettings((prevSettings) =>
@@ -123,13 +113,6 @@ function App() {
   return (
     <div className="centered">
       <div className="wrapper">
-        <h1>
-          <span>Currently </span>
-          <span>{LED ? "ON" : "OFF"}</span>
-        </h1>
-        <Button variant="contained" onClick={toggleLed} disabled={!isConnected}>
-          {LED ? "Turn Off" : "Turn On"}
-        </Button>
         <p>{isConnected ? "Connected" : "Disconnected"}</p>
         <TurnoutList
           turnoutSettings={turnoutSettings}

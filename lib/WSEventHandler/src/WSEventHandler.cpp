@@ -41,19 +41,7 @@ void WSEventHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEve
     }
 
     const char *msgType = receivedJson["type"];
-    if (strcmp(msgType, "message") == 0)
-    {
-      // get the target LED state
-      bool led = receivedJson["LED"];
-      digitalWrite(2, led);
-      // send ACK
-      client->text(dataBuffer);
-      // alert all other clients
-      for (AsyncWebSocketClient *c : clients)
-        if (c != nullptr && c != client)
-          c->text(dataBuffer);
-    }
-    else if (strcmp(msgType, TurnoutManager::TYPE_GET_TURNOUTS) == 0)
+    if (strcmp(msgType, TurnoutManager::TYPE_GET_TURNOUTS) == 0)
     {
       String jsonString = turnoutManager.turnoutsToJson();
       jsonString.toCharArray(dataBuffer, BUFFER_SIZE);
