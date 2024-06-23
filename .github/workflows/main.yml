@@ -70,6 +70,14 @@ jobs:
       - name: Set environment variable
         run: echo "RELEASE_VERSION=$(cat release_version.txt)" >> $GITHUB_ENV
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+
       - name: Build PlatformIO Firmware
         run: pio run
 
@@ -97,6 +105,14 @@ jobs:
 
       - name: Set environment variable
         run: echo "RELEASE_VERSION=$(cat release_version.txt)" >> $GITHUB_ENV
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
 
       - name: Build PlatformIO Filesystem Image
         run: pio run --target buildfs --environment esp32dev
