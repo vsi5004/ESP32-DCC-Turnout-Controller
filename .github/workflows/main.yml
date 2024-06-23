@@ -43,6 +43,7 @@ jobs:
           else
             COMMIT_SHORT=$(echo $GITHUB_SHA | cut -c1-7)
             echo "RELEASE_VERSION=commit-${COMMIT_SHORT}" >> $GITHUB_ENV
+          fi
           
       - name: Save release version to file
         run: echo "${{ env.RELEASE_VERSION }}" > release_version.txt
