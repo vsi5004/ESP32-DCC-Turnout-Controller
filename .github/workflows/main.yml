@@ -1,6 +1,9 @@
 name: PlatformIO CI
 
-on: [push]
+on: 
+  push:
+    tags:
+      - 'v*'  # This will trigger on version tags
 
 jobs:
   build:
@@ -23,7 +26,7 @@ jobs:
           key: ${{ runner.os }}-pio
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -32,3 +35,16 @@ jobs:
 
       - name: Build PlatformIO Project
         run: pio run
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "RELEASE_VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+
+      - name: Upload PlatformIO Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: platformio-artifacts-${{ env.RELEASE_VERSION }}
+          path: |
+            .pio/build/*/*.bin
+            .pio/build/*/*.elf
+            .pio/build/*/*.hex
