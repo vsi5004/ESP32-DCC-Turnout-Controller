@@ -43,10 +43,12 @@ jobs:
           else
             COMMIT_SHORT=$(echo $GITHUB_SHA | cut -c1-7)
             echo "RELEASE_VERSION=commit-${COMMIT_SHORT}" >> $GITHUB_ENV
+          
+      - name: Save release version to file
+        run: echo "${{ env.RELEASE_VERSION }}" > release_version.txt
 
       - name: Upload environment info
-        run: echo "RELEASE_VERSION=${RELEASE_VERSION}" > release_version.txt
-      - uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
           name: env-info
           path: release_version.txt
