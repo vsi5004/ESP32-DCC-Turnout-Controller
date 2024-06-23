@@ -39,16 +39,17 @@ jobs:
         id: get_version
         run: |
           if [[ $GITHUB_REF == refs/tags/* ]]; then
-            echo "RELEASE_VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+            echo "RELEASE_VERSION=${GITHUB_REF/refs/tags/}" >> $GITHUB_ENV
           else
             COMMIT_SHORT=$(echo $GITHUB_SHA | cut -c1-7)
             echo "RELEASE_VERSION=commit-${COMMIT_SHORT}" >> $GITHUB_ENV
 
       - name: Upload environment info
-        uses: actions/upload-artifact@v4
+        run: echo "RELEASE_VERSION=${RELEASE_VERSION}" > release_version.txt
+      - uses: actions/upload-artifact@v4
         with:
           name: env-info
-          path: ${{ env.RELEASE_VERSION }}
+          path: release_version.txt
 
   build-firmware:
     runs-on: ubuntu-latest
@@ -62,6 +63,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: env-info
+
+      - name: Set environment variable
+        run: echo "RELEASE_VERSION=$(cat release_version.txt)" >> $GITHUB_ENV
 
       - name: Build PlatformIO Firmware
         run: pio run
@@ -87,6 +91,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: env-info
+
+      - name: Set environment variable
+        run: echo "RELEASE_VERSION=$(cat release_version.txt)" >> $GITHUB_ENV
 
       - name: Build PlatformIO Filesystem Image
         run: pio run --target buildfs --environment esp32dev
