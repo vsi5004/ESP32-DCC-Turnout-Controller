@@ -1,7 +1,8 @@
 # ESP AP Webserver
 
-
 This is my experiment with "mobile app development" for the ESP32. The project consists of two parts, the ESP32 code and the React Web Application. The ESP32 acts as a WiFi hotspot with captive portal, similar to the free WiFi without password but a website will pop up prompting you to log in or agree their terms of services. The ESP32 will serve a website in its captive portal as well as opening a websocket for real-time interaction with the mobile interface.
+
+[![Build Status](https://github.com/vsi5004/ESP32-DCC-Turnout-Controller/actions/workflows/main.yml/badge.svg)](https://github.com/vsi5004/ESP32-DCC-Turnout-Controller/actions)
 
 ## ESP32 Sketch
 

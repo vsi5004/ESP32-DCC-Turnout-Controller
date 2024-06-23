@@ -5,7 +5,7 @@ on:
     branches:
       - '**'
     tags:
-      - '**'
+      - 'v*'
 
 jobs:
   build:
@@ -35,8 +35,11 @@ jobs:
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
 
-      - name: Build PlatformIO Project
+      - name: Build PlatformIO Firmware
         run: pio run
+
+      - name: Build PlatformIO Filesystem Image
+        run: pio run --target uploadfs --environment esp32dev
 
       - name: Get version from tag or commit
         id: get_version
@@ -48,11 +51,18 @@ jobs:
             echo "RELEASE_VERSION=commit-${COMMIT_SHORT}" >> $GITHUB_ENV
           fi
 
-      - name: Upload PlatformIO Artifacts
+      - name: Upload PlatformIO Firmware Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: platformio-artifacts-${{ env.RELEASE_VERSION }}
+          name: platformio-firmware-${{ env.RELEASE_VERSION }}
           path: |
             .pio/build/*/*.bin
             .pio/build/*/*.elf
             .pio/build/*/*.hex
+
+      - name: Upload PlatformIO Filesystem Image Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: platformio-filesystem-${{ env.RELEASE_VERSION }}
+          path: |
+            .pio/build/esp32dev/littlefs.bin
