@@ -6,6 +6,7 @@
 #include <WSEventHandler.h>
 #include <Turnout.h>
 #include <TurnoutManager.h>
+#include <Elog.h>
 
 #define SSID "ESP32 DCC Turnout Controller"
 #define DNS_PORT 53
@@ -16,7 +17,7 @@ const IPAddress gateway(255, 255, 255, 0);
 DNSServer dnsServer;
 AsyncWebServer server(80);
 AsyncWebSocket websocket("/ws");
-
+Elog logger;
 TurnoutManager turnoutManager;
 
 void startWifi();
@@ -33,8 +34,10 @@ void redirectToIndex(AsyncWebServerRequest *request)
 void setup()
 {
   Serial.begin(115200);
+  logger.addSerialLogging(Serial, "Main", DEBUG);
 
-  turnoutManager.initHardwareManager();
+  turnoutManager.init();
+  initWSEventHandler();
   initFileSystem();
   turnoutManager.loadTurnouts();
   turnoutManager.initTurnouts();
@@ -51,21 +54,20 @@ void startWebsocketServer()
   server.serveStatic("/", LittleFS, "/www/").setDefaultFile("index.html");
   server.onNotFound(redirectToIndex);
   server.begin();
-  Serial.println("Server Started");
+  logger.log(INFO, "Web Server Started");
 }
 
 void startWifi()
 {
   dnsServer.start(DNS_PORT, "*", apIP);
-  Serial.println("\nWiFi AP is now running\nIP address: ");
-  Serial.println(WiFi.softAPIP());
+  logger.log(INFO, "WiFi AP is now running at IP address: %s", WiFi.softAPIP().toString());
 }
 
 void initFileSystem()
 {
   if (!LittleFS.begin())
   {
-    Serial.println("An Error has occurred while mounting LittleFS");
+    logger.log(CRITICAL, "An Error has occurred while mounting LittleFS");
     while (true)
     {
       delay(1000);
@@ -77,7 +79,7 @@ void configWifi()
 {
   if (!WiFi.softAPConfig(apIP, apIP, gateway))
   {
-    Serial.println("AP Config Failed");
+    logger.log(CRITICAL, "AP Config Failed");
     while (true)
     {
       delay(1000);
@@ -92,7 +94,7 @@ void initWifi()
   WiFi.mode(WIFI_AP);
   if (!WiFi.softAP(SSID))
   {
-    Serial.println("AP Start Failed");
+    logger.log(CRITICAL, "AP Start Failed");
     while (true)
     {
       delay(1000);

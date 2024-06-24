@@ -8,6 +8,14 @@ import TurnoutList from "./TurnoutList";
 import { IMessageEvent, w3cwebsocket } from "websocket";
 import { TurnoutSetting } from "./types";
 import { TURNOUT_MAX_ENDPOINT, TURNOUT_MAX_THROW_SPEED, TURNOUT_MIN_ENDPOINT, TURNOUT_MIN_THROW_SPEED } from "./Turnout";
+import AppBar from "@mui/material/AppBar";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
+import IconButton from "@mui/material/IconButton";
+import WifiTetheringIcon from '@mui/icons-material/WifiTethering';
+import WifiTetheringErrorIcon from '@mui/icons-material/WifiTetheringError';
+import ConnectionDialog from "./ConnectionDialog";
+import Box from "@mui/material/Box";
 
 function App() {
   const websocket = useRef<w3cwebsocket | null>(null);
@@ -18,6 +26,7 @@ function App() {
     severity: "success",
     open: false
   });
+  const [connectionDialogOpen, setConnectionDialogOpen] = useState(false);
 
   useEffect(() => {
     websocket.current = new w3cwebsocket("ws://192.168.2.1/ws");
@@ -39,12 +48,13 @@ function App() {
 
     websocket.current.onmessage = (message: IMessageEvent) => {
       try {
+        console.log(message.data.toString())
         const dataFromServer = JSON.parse(message.data.toString());
         if (dataFromServer.type === "turnoutsList") {
           setTurnoutSettings(dataFromServer.turnouts);
           setAlert({ message: "Turnouts list updated", severity: "success", open: true });
         } else if (dataFromServer.type === "turnoutTestComplete") {
-          handleTestComplete(dataFromServer.turnoutId);
+          handleMoveComplete(dataFromServer.turnoutId);
         }
       } catch (error) {
         console.error("Error parsing message", error);
@@ -107,18 +117,36 @@ function App() {
     setAlert((prevAlert) => ({ ...prevAlert, open: false }));
   };
 
-  const handleTestComplete = (id: number) => {
+  const handleMoveComplete = (id: number) => {
     setTurnoutSettings((prevSettings) =>
       prevSettings.map((setting) =>
-        setting.id === id ? { ...setting, testInProgress: false } : setting
+        setting.id === id ? { ...setting, moveInProgress: false } : setting
       )
     );
   };
 
+  const handleConnectionStatusClick = () => {
+    setConnectionDialogOpen(true);
+  };
+
+  const handleCloseConnectionDialog = () => {
+    setConnectionDialogOpen(false);
+  };
+
   return (
+    <Box sx={{ flexGrow: 1 }}>
+      <AppBar position="static">
+        <Toolbar>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            DCC Turnout Controller
+          </Typography>
+          <IconButton color="inherit" onClick={handleConnectionStatusClick}>
+            {isConnected ? <WifiTetheringIcon /> : <WifiTetheringErrorIcon />}
+          </IconButton>
+        </Toolbar>
+      </AppBar>
     <div className="centered">
       <div className="wrapper">
-        <p>{isConnected ? "Connected" : "Disconnected"}</p>
         <TurnoutList
           turnoutSettings={turnoutSettings}
           handleChange={handleChange}
@@ -144,8 +172,14 @@ function App() {
             {alert.message}
           </Alert>
         </Snackbar>
+        <ConnectionDialog
+          open={connectionDialogOpen}
+          isConnected={isConnected}
+          onClose={handleCloseConnectionDialog}
+        />
       </div>
     </div>
+    </Box>
   );
 }
 

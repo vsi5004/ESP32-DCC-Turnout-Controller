@@ -1,19 +1,26 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
-
+#include <Elog.h>
 #include "WSEventHandler.h"
 #include "Turnout.h"
 #include "TurnoutManager.h"
 
-// allocate memory for received json data
-#define BUFFER_SIZE 512
+// Allocate memory for received json data, assuming list of 12 turnouts and their settings is around
+// 2048 bytes long with some extra for future growth
+#define BUFFER_SIZE 2176
 StaticJsonDocument<BUFFER_SIZE> receivedJson;
-// initial device state
-char dataBuffer[BUFFER_SIZE] = "{\"type\":\"message\",\"LED\":false}";
-AsyncWebSocketClient *clients[16] = {nullptr};
+char dataBuffer[BUFFER_SIZE] = "{}";
+AsyncWebSocketClient *clients[10] = {nullptr};
 
-// External reference to TurnoutManager instance
+// External reference to TurnoutManager instance in main.cpp
 extern TurnoutManager turnoutManager;
+
+Elog loggerWSE;
+
+void initWSEventHandler()
+{
+  loggerWSE.addSerialLogging(Serial, "WSEventHandler", DEBUG);
+}
 
 void WSEventHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
 {
@@ -21,22 +28,20 @@ void WSEventHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEve
   {
     if (len >= BUFFER_SIZE)
     {
-      Serial.println("Data too large for buffer");
+      loggerWSE.log(ERROR, "Data too large for buffer");
       return;
     }
 
     // save the response as newest device state
     strncpy(dataBuffer, (char *)data, len);
     dataBuffer[len] = '\0';
-    Serial.print("Received data: ");
-    Serial.println(dataBuffer);
+    loggerWSE.log(DEBUG, "Received data: %s", dataBuffer);
 
     // parse the received json data
     DeserializationError error = deserializeJson(receivedJson, dataBuffer);
     if (error)
     {
-      Serial.print(F("deserializeJson() failed: "));
-      Serial.println(error.f_str());
+      loggerWSE.log(ERROR, "deserializeJson() failed: %s", error.f_str());
       return;
     }
 
@@ -76,14 +81,12 @@ void WSEventHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEve
     }
     else
     {
-      Serial.println("Unknown message type");
+      loggerWSE.log(ERROR, "Unknown message type");
     }
   }
   else if (type == WS_EVT_CONNECT)
   {
-    Serial.println("Websocket client connection received");
-    // ACK with current state
-    client->text(dataBuffer);
+    loggerWSE.log(INFO, "Websocket client connection received");
     // store connected client
     for (int i = 0; i < 16; ++i)
       if (clients[i] == nullptr)
@@ -94,7 +97,7 @@ void WSEventHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEve
   }
   else if (type == WS_EVT_DISCONNECT)
   {
-    Serial.println("Client disconnected");
+    loggerWSE.log(INFO, "Client disconnected");
     // remove client from storage
     for (int i = 0; i < 16; ++i)
       if (clients[i] == client)
@@ -105,7 +108,7 @@ void WSEventHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEve
   }
 }
 
-void SendTestComplete(int turnoutId)
+void SendTestComplete(const int turnoutId)
 {
   receivedJson.clear();
   receivedJson["type"] = TurnoutManager::TYPE_TURNOUT_TEST_COMPLETE;
@@ -114,10 +117,11 @@ void SendTestComplete(int turnoutId)
   serializeJson(receivedJson, jsonString);
   jsonString.toCharArray(dataBuffer, BUFFER_SIZE);
   for (AsyncWebSocketClient *c : clients)
+  {
     if (c != nullptr)
     {
       c->text(dataBuffer);
     }
-  Serial.print("Sent data: ");
-  Serial.println(dataBuffer);
+  }
+  loggerWSE.log(DEBUG, "Sent data: %s", dataBuffer);
 }

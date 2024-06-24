@@ -57,7 +57,7 @@ const Turnout: React.FC<TurnoutProps> = ({
         <Typography>Turnout {turnout.id + 1}</Typography>
       </AccordionSummary>
       <AccordionDetails>
-        <Box display="flex" flexDirection="column" gap={2}>
+        <Box display="flex" flexDirection="column" gap={2} padding={2}>
           <TextField
             label="Turnout DCC Address"
             type="number"

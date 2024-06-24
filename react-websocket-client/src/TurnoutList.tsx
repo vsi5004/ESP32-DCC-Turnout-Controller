@@ -1,6 +1,7 @@
 import React from 'react';
 import Turnout from './Turnout'; // Adjust the path as needed
 import { TurnoutSetting } from './types';
+import Box from '@mui/material/Box';
 
 interface TurnoutListProps {
   turnoutSettings: TurnoutSetting[];
@@ -20,14 +21,16 @@ const TurnoutList: React.FC<TurnoutListProps> = ({
   return (
     <div>
       {turnoutSettings.map((turnout) => (
-        <Turnout
-          key={turnout.id}
-          turnout={turnout}
-          handleChange={handleChange}
-          sendTurnoutSetting={sendTurnoutSetting}
-          sendTurnoutTest={sendTurnoutTest}
-          isConnected={isConnected}
-        />
+        <Box key={turnout.id} marginY={2}>
+          <Turnout
+            key={turnout.id}
+            turnout={turnout}
+            handleChange={handleChange}
+            sendTurnoutSetting={sendTurnoutSetting}
+            sendTurnoutTest={sendTurnoutTest}
+            isConnected={isConnected}
+          />
+        </Box>
       ))}
     </div>
   );

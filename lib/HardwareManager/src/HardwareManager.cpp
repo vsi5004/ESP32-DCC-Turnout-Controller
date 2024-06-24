@@ -2,6 +2,7 @@
 #include "WSEventHandler.h"
 #include "TurnoutManager.h"
 #include <Adafruit_PWMServoDriver.h>
+#include <Elog.h>
 
 static constexpr int SERVO_OFF_CYCLE = 4096;
 static constexpr int SERVO_FREQUENCY = 50;
@@ -11,6 +12,8 @@ static constexpr int SERVO_MIN_POSITION = 150;
 static constexpr int RELAY_PINS[TurnoutManager::MAX_TURNOUTS] = {32,33,25,27,14,12,13,23,17,5,18,19};
 static constexpr int RELAY_INIT_STATE = HIGH;
 
+Elog loggerHWM;
+
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
 HardwareManager::HardwareManager()
@@ -19,6 +22,7 @@ HardwareManager::HardwareManager()
 
 void HardwareManager::init()
 {
+    loggerHWM.addSerialLogging(Serial, "HWManager", DEBUG);
     pwm.begin();
     pwm.setPWMFreq(SERVO_FREQUENCY);
     for (int i = 0; i < TurnoutManager::MAX_TURNOUTS; i++)
@@ -52,10 +56,7 @@ void HardwareManager::updateServoPosition(Turnout *turnout)
             {
                 turnout->moveInProgress = false;
                 SendTestComplete(turnout->id);
-                Serial.print("Turnout ");
-                Serial.print(turnout->id);
-                Serial.print(" arrived at position ");
-                Serial.println(turnout->currentPosition);
+                loggerHWM.log(INFO, "Turnout %d arrived at position %d", turnout->id, turnout->currentPosition);
             }
         }
         turnout->lastMoveTime = currentMillis;
@@ -70,19 +71,11 @@ void HardwareManager::disableServo(int channel)
 void HardwareManager::setServoPosition(const int channel, const Turnout *turnout)
 {
     pwm.setPWM(channel, 0, map(turnout->currentPosition, 0, 180, SERVO_MIN_POSITION, SERVO_MAX_POSITION));
-    Serial.print("Moving turnout ");
-    Serial.print(turnout->id);
-    Serial.print(" to position ");
-    Serial.print(turnout->currentPosition);
-    Serial.print(" with target position ");
-    Serial.println(turnout->targetPosition);
+    loggerHWM.log(DEBUG, "Moving turnout %d to position %d with target position %d", turnout->id, turnout->currentPosition, turnout->targetPosition);
 }
 
 void HardwareManager::setRelayPostion(const int channel, const bool state)
 {
     digitalWrite(RELAY_PINS[channel], state);
-    Serial.print("Setting relay ");
-    Serial.print(channel);
-    Serial.print(" to ");
-    Serial.println(state ? "ON" : "OFF");
+    loggerHWM.log(DEBUG, "Setting relay %d to %s", channel, state ? "ON" : "OFF");
 }

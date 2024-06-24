@@ -14,7 +14,7 @@ public:
   static constexpr const char *TYPE_TURNOUT_SETTINGS = "turnoutSettings";
 
   TurnoutManager();
-  void initHardwareManager();
+  void init();
   void initTurnouts();
   void loadTurnouts();
   void saveTurnouts();

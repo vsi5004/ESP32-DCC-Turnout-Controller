@@ -1,9 +1,11 @@
 #include "TurnoutManager.h"
 #include <ArduinoJson.h>
 #include <LittleFS.h>
+#include <Elog.h>
 #include "HardwareManager.h"
 
 HardwareManager hardwareManager;
+Elog loggerTNM;
 
 TurnoutManager::TurnoutManager()
 {
@@ -14,9 +16,15 @@ TurnoutManager::TurnoutManager()
     }
 }
 
+void TurnoutManager::init()
+{
+    loggerTNM.addSerialLogging(Serial, "TNManager", DEBUG);
+    hardwareManager.init();
+}
+
 void TurnoutManager::loadTurnouts()
 {
-    Serial.println("Loading turnouts");
+    loggerTNM.log(INFO, "Loading turnouts from file");
     if (LittleFS.exists("/turnouts.txt"))
     {
         File file = LittleFS.open("/turnouts.txt", "r");
@@ -37,17 +45,17 @@ void TurnoutManager::loadTurnouts()
                 {
                     turnouts[i] = new Turnout(Turnout::fromJson(doc[i]));
                 }
-                Serial.println("Turnouts loaded from file");
+                loggerTNM.log(INFO, "Successfully loaded turnouts from file");
             }
             else
             {
-                Serial.println("Failed to parse turnouts file");
+                loggerTNM.log(ERROR, "Failed to parse turnouts file");
             }
         }
     }
     else
     {
-        Serial.println("Creating new turnouts file");
+        loggerTNM.log(INFO, "Creating new turnouts file");
         saveTurnouts(); // Create an empty turnouts file
     }
 }
@@ -75,11 +83,11 @@ void TurnoutManager::saveTurnouts()
     {
         serializeJson(doc, file);
         file.close();
-        Serial.println("Latest turnout settings saved in file");
+        loggerTNM.log(INFO, "Latest turnout settings saved in file");
     }
     else
     {
-        Serial.println("Failed to create turnouts file");
+        loggerTNM.log(ERROR, "Failed to create turnouts file");
     }
 }
 
@@ -102,7 +110,7 @@ void TurnoutManager::updateTurnout(const Turnout &turnout)
     }
     else
     {
-        Serial.println("Max turnouts limit reached");
+        loggerTNM.log(WARNING, "Max turnouts limit reached");
     }
 }
 
@@ -131,15 +139,11 @@ String TurnoutManager::turnoutsToJson() const
     return jsonString;
 }
 
-void TurnoutManager::initHardwareManager()
-{
-    hardwareManager.init();
-}
-
 void TurnoutManager::initTurnouts()
 {
     for (int i = 0; i < turnoutCount; i++)
     {
+        loggerTNM.log(INFO, "Initializing turnout %d", turnouts[i]->id);
         if (turnouts[i]->reversed)
         {
             turnouts[i]->currentPosition = turnouts[i]->startClosed ? turnouts[i]->openEndpoint : turnouts[i]->closedEndpoint;
@@ -188,16 +192,7 @@ void TurnoutManager::setTurnoutPosition(int turnoutId, int targetPosition, bool 
             }
 
             hardwareManager.setRelayPostion(turnouts[i]->id, frogPolarity);
-
-            Serial.print("Setting turnout ");
-            Serial.print(turnoutId);
-            Serial.print(" to position ");
-            Serial.print(targetPosition);
-            Serial.print(" with frog polarity ");
-            Serial.print(frogPolarity);
-            Serial.print(" and throw speed ");
-            Serial.println(throwSpeed);
-
+            loggerTNM.log(INFO, "Setting turnout %d to position %d with frog polarity %d and throw speed %d", turnoutId, targetPosition, frogPolarity, throwSpeed);
             return;
         }
     }
