@@ -8,8 +8,11 @@ String Turnout::toJson() const
   doc["closedEndpoint"] = closedEndpoint;
   doc["openEndpoint"] = openEndpoint;
   doc["reversed"] = reversed;
+  doc["startClosed"] = startClosed;
   doc["testInProgress"] = testInProgress;
   doc["throwSpeed"] = throwSpeed;
+  doc["poweredFrog"] = poweredFrog;
+  doc["reverseFrogPolarity"] = reverseFrogPolarity;
 
   String jsonString;
   serializeJson(doc, jsonString);
@@ -24,6 +27,9 @@ Turnout Turnout::fromJson(const JsonObject &json)
       json["closedEndpoint"],
       json["openEndpoint"],
       json["reversed"],
+      json["startClosed"],
       json["testInProgress"],
-      json["throwSpeed"]);
+      json["throwSpeed"],
+      json["poweredFrog"],
+      json["reverseFrogPolarity"]);
 }

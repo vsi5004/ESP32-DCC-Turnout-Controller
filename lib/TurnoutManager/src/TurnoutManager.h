@@ -9,12 +9,12 @@ class TurnoutManager
 {
 public:
   TurnoutManager();
+  void initHardwareManager();
   void loadTurnouts();
   void saveTurnouts();
   void updateTurnout(const Turnout &turnout);
   String turnoutsToJson() const;
-  void initServos();
-  void updateServoPositions();
+  void updateTurnoutPositions();
   void setTurnoutPosition(int turnoutId, int targetPosition, int throwSpeed);
 
   Turnout *turnouts[MAX_TURNOUTS];

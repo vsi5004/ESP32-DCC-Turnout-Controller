@@ -34,7 +34,7 @@ void setup()
 {
   Serial.begin(115200);
 
-  turnoutManager.initServos();
+  turnoutManager.initHardwareManager();
   initWifi();
   configWifi();
   startWifi();
@@ -102,6 +102,6 @@ void initWifi()
 void loop()
 {
   dnsServer.processNextRequest();
-  turnoutManager.updateServoPositions();
+  turnoutManager.updateTurnoutPositions();
   vTaskDelay(1);
 }

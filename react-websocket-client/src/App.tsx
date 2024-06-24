@@ -91,8 +91,11 @@ function App() {
         closedEndpoint: TURNOUT_MIN_ENDPOINT,
         openEndpoint: TURNOUT_MAX_ENDPOINT,
         reversed: false,
+        startClosed: true,
         testInProgress: false,
         throwSpeed: (TURNOUT_MAX_THROW_SPEED + TURNOUT_MIN_THROW_SPEED) / 2,
+        poweredFrog: true,
+        reverseFrogPolarity: false,
       };
       sendMessage({ type: "turnoutSettings", settings: newTurnout });
     } else {

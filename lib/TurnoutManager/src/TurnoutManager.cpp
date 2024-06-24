@@ -1,15 +1,10 @@
 #include "TurnoutManager.h"
-#include "WSEventHandler.h"
 #include <ArduinoJson.h>
 #include <LittleFS.h>
-#include <Adafruit_PWMServoDriver.h>
+#include "HardwareManager.h"
 
-static constexpr int SERVO_OFF_CYCLE = 4096;
-static constexpr int SERVO_FREQUENCY = 50;
-static constexpr int SERVO_MAX_POSITION = 600;
-static constexpr int SERVO_MIN_POSITION = 150;
 
-Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
+HardwareManager hardwareManager;
 
 TurnoutManager::TurnoutManager()
 {
@@ -69,8 +64,11 @@ void TurnoutManager::saveTurnouts()
         obj["closedEndpoint"] = turnouts[i]->closedEndpoint;
         obj["openEndpoint"] = turnouts[i]->openEndpoint;
         obj["reversed"] = turnouts[i]->reversed;
+        obj["startClosed"] = turnouts[i]->startClosed;
         obj["testInProgress"] = turnouts[i]->testInProgress;
         obj["throwSpeed"] = turnouts[i]->throwSpeed;
+        obj["poweredFrog"] = turnouts[i]->poweredFrog;
+        obj["reverseFrogPolarity"] = turnouts[i]->reverseFrogPolarity;
     }
 
     File file = LittleFS.open("/turnouts.txt", "w");
@@ -122,8 +120,11 @@ String TurnoutManager::turnoutsToJson() const
         turnoutObj["closedEndpoint"] = turnouts[i]->closedEndpoint;
         turnoutObj["openEndpoint"] = turnouts[i]->openEndpoint;
         turnoutObj["reversed"] = turnouts[i]->reversed;
+        turnoutObj["startClosed"] = turnouts[i]->startClosed;
         turnoutObj["testInProgress"] = turnouts[i]->testInProgress;
         turnoutObj["throwSpeed"] = turnouts[i]->throwSpeed;
+        turnoutObj["poweredFrog"] = turnouts[i]->poweredFrog;
+        turnoutObj["reverseFrogPolarity"] = turnouts[i]->reverseFrogPolarity;
     }
 
     String jsonString;
@@ -131,60 +132,16 @@ String TurnoutManager::turnoutsToJson() const
     return jsonString;
 }
 
-void TurnoutManager::initServos()
+void TurnoutManager::initHardwareManager()
 {
-    pwm.begin();
-    pwm.setPWMFreq(SERVO_FREQUENCY);
-    delay(10);
+    hardwareManager.initServos();
 }
 
-void TurnoutManager::updateServoPositions()
+void TurnoutManager::updateTurnoutPositions()
 {
-    unsigned long currentMillis = millis();
     for (int i = 0; i < turnoutCount; i++)
     {
-        if (turnouts[i]->lastMoveTime + turnouts[i]->throwSpeed < currentMillis)
-        {
-
-            int channel = turnouts[i]->id;
-            int position = turnouts[i]->targetPosition;
-            if (turnouts[i]->currentPosition > position)
-            {
-                turnouts[i]->currentPosition--;
-                pwm.setPWM(channel, 0, map(turnouts[i]->currentPosition, 0, 180, SERVO_MIN_POSITION, SERVO_MAX_POSITION));
-                Serial.print("Moving turnout ");
-                Serial.print(turnouts[i]->id);
-                Serial.print(" to position ");
-                Serial.print(turnouts[i]->currentPosition);
-                Serial.print(" with target position ");
-                Serial.println(turnouts[i]->targetPosition);
-            }
-            else if (turnouts[i]->currentPosition < position)
-            {
-                turnouts[i]->currentPosition++;
-                pwm.setPWM(channel, 0, map(turnouts[i]->currentPosition, 0, 180, SERVO_MIN_POSITION, SERVO_MAX_POSITION));
-                Serial.print("Moving turnout ");
-                Serial.print(turnouts[i]->id);
-                Serial.print(" to position ");
-                Serial.print(turnouts[i]->currentPosition);
-                Serial.print(" with target position ");
-                Serial.println(turnouts[i]->targetPosition);
-            }
-            else
-            {
-                pwm.setPWM(channel, 0, SERVO_OFF_CYCLE);
-                if (turnouts[i]->testInProgress)
-                {
-                    turnouts[i]->testInProgress = false;
-                    SendTestComplete(turnouts[i]->id);
-                    Serial.print("Turnout ");
-                    Serial.print(turnouts[i]->id);
-                    Serial.print(" arrived at position ");
-                    Serial.println(turnouts[i]->currentPosition);
-                }
-            }
-            turnouts[i]->lastMoveTime = currentMillis;
-        }
+        hardwareManager.updateServoPosition(turnouts[i]);
     }
 }
 

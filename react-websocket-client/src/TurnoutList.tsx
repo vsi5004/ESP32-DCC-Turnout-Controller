@@ -1,6 +1,6 @@
-import React from "react";
-import Turnout from "./Turnout";
-import { TurnoutSetting } from "./types";
+import React from 'react';
+import Turnout from './Turnout'; // Adjust the path as needed
+import { TurnoutSetting } from './types';
 
 interface TurnoutListProps {
   turnoutSettings: TurnoutSetting[];
@@ -18,7 +18,7 @@ const TurnoutList: React.FC<TurnoutListProps> = ({
   isConnected
 }) => {
   return (
-    <>
+    <div>
       {turnoutSettings.map((turnout) => (
         <Turnout
           key={turnout.id}
@@ -29,7 +29,7 @@ const TurnoutList: React.FC<TurnoutListProps> = ({
           isConnected={isConnected}
         />
       ))}
-    </>
+    </div>
   );
 };
 

@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   Accordion,
   AccordionSummary,
@@ -13,6 +14,7 @@ import {
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { TurnoutSetting } from "./types";
+import LabeledSwitch from "./LabeledSwitch";
 
 interface TurnoutProps {
   turnout: TurnoutSetting;
@@ -97,6 +99,37 @@ const Turnout: React.FC<TurnoutProps> = ({
                 { value: TURNOUT_MIN_THROW_SPEED + 2, label: 'Fast' },
                 { value: TURNOUT_MAX_THROW_SPEED - 2, label: 'Slow' }
               ]}
+            />
+          </Box>
+          <Box display="flex" alignItems="center" gap={1}>
+            <Typography>Powered Frog</Typography>
+            <Switch
+              checked={turnout.poweredFrog}
+              onChange={(e) => handleChange(turnout.id, "poweredFrog", e.target.checked)}
+            />
+          </Box>
+          {turnout.poweredFrog && (
+            <Box display="flex" alignItems="center" gap={1}>
+              <Typography>Frog Polarity</Typography>
+              <LabeledSwitch
+                checked={turnout.reverseFrogPolarity}
+                onChange={handleChange}
+                id={turnout.id}
+                labelOn="Reversed"
+                labelOff="Normal"
+                name="reverseFrogPolarity"
+              />
+            </Box>
+          )}
+          <Box display="flex" alignItems="center" gap={1}>
+            <Typography>Starting Position</Typography>
+            <LabeledSwitch
+              checked={turnout.startClosed}
+              onChange={handleChange}
+              id={turnout.id}
+              labelOn="Closed"
+              labelOff="Thrown"
+              name="startClosed"
             />
           </Box>
           {turnout.testInProgress ? (
