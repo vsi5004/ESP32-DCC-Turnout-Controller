@@ -6,7 +6,7 @@ interface TurnoutListProps {
   turnoutSettings: TurnoutSetting[];
   handleChange: (id: number, field: string, value: any) => void;
   sendTurnoutSetting: (setting: TurnoutSetting) => void;
-  sendTurnoutTest: (id: number) => void;
+  sendTurnoutTest: (id: number, targetPosition: number) => void;
   isConnected: boolean;
 }
 

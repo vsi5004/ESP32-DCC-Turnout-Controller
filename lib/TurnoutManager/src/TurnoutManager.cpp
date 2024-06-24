@@ -1,7 +1,19 @@
 #include "TurnoutManager.h"
+#include "WSEventHandler.h"
+#include <ArduinoJson.h>
+#include <LittleFS.h>
+#include <Adafruit_PWMServoDriver.h>
 
-TurnoutManager::TurnoutManager() : turnoutCount(0)
+static constexpr int SERVO_OFF_CYCLE = 4096;
+static constexpr int SERVO_FREQUENCY = 50;
+static constexpr int SERVO_MAX_POSITION = 600;
+static constexpr int SERVO_MIN_POSITION = 150;
+
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
+
+TurnoutManager::TurnoutManager()
 {
+    turnoutCount = 0;
     for (int i = 0; i < MAX_TURNOUTS; i++)
     {
         turnouts[i] = nullptr;
@@ -58,6 +70,7 @@ void TurnoutManager::saveTurnouts()
         obj["openEndpoint"] = turnouts[i]->openEndpoint;
         obj["reversed"] = turnouts[i]->reversed;
         obj["testInProgress"] = turnouts[i]->testInProgress;
+        obj["throwSpeed"] = turnouts[i]->throwSpeed;
     }
 
     File file = LittleFS.open("/turnouts.txt", "w");
@@ -110,9 +123,94 @@ String TurnoutManager::turnoutsToJson() const
         turnoutObj["openEndpoint"] = turnouts[i]->openEndpoint;
         turnoutObj["reversed"] = turnouts[i]->reversed;
         turnoutObj["testInProgress"] = turnouts[i]->testInProgress;
+        turnoutObj["throwSpeed"] = turnouts[i]->throwSpeed;
     }
 
     String jsonString;
     serializeJson(doc, jsonString);
     return jsonString;
+}
+
+void TurnoutManager::initServos()
+{
+    pwm.begin();
+    pwm.setPWMFreq(SERVO_FREQUENCY);
+    delay(10);
+}
+
+void TurnoutManager::updateServoPositions()
+{
+    unsigned long currentMillis = millis();
+    for (int i = 0; i < turnoutCount; i++)
+    {
+        if (turnouts[i]->lastMoveTime + turnouts[i]->throwSpeed < currentMillis)
+        {
+
+            int channel = turnouts[i]->id;
+            int position = turnouts[i]->targetPosition;
+            if (turnouts[i]->currentPosition > position)
+            {
+                turnouts[i]->currentPosition--;
+                pwm.setPWM(channel, 0, map(turnouts[i]->currentPosition, 0, 180, SERVO_MIN_POSITION, SERVO_MAX_POSITION));
+                Serial.print("Moving turnout ");
+                Serial.print(turnouts[i]->id);
+                Serial.print(" to position ");
+                Serial.print(turnouts[i]->currentPosition);
+                Serial.print(" with target position ");
+                Serial.println(turnouts[i]->targetPosition);
+            }
+            else if (turnouts[i]->currentPosition < position)
+            {
+                turnouts[i]->currentPosition++;
+                pwm.setPWM(channel, 0, map(turnouts[i]->currentPosition, 0, 180, SERVO_MIN_POSITION, SERVO_MAX_POSITION));
+                Serial.print("Moving turnout ");
+                Serial.print(turnouts[i]->id);
+                Serial.print(" to position ");
+                Serial.print(turnouts[i]->currentPosition);
+                Serial.print(" with target position ");
+                Serial.println(turnouts[i]->targetPosition);
+            }
+            else
+            {
+                pwm.setPWM(channel, 0, SERVO_OFF_CYCLE);
+                if (turnouts[i]->testInProgress)
+                {
+                    turnouts[i]->testInProgress = false;
+                    SendTestComplete(turnouts[i]->id);
+                    Serial.print("Turnout ");
+                    Serial.print(turnouts[i]->id);
+                    Serial.print(" arrived at position ");
+                    Serial.println(turnouts[i]->currentPosition);
+                }
+            }
+            turnouts[i]->lastMoveTime = currentMillis;
+        }
+    }
+}
+
+void TurnoutManager::setTurnoutPosition(int turnoutId, int targetPosition, int throwSpeed = 0)
+{
+    for (int i = 0; i < turnoutCount; i++)
+    {
+        if (turnouts[i]->id == turnoutId)
+        {
+            turnouts[i]->targetPosition = targetPosition;
+            turnouts[i]->lastMoveTime = millis();
+            turnouts[i]->testInProgress = true;
+
+            // Set throw speed if provided for endpoint testing, otherwise use the existing speed
+            // Note that 0 is not a valid option in the UI, so it is safe to use as a default value
+            if (throwSpeed > 0)
+            {
+                turnouts[i]->throwSpeed = throwSpeed;
+            }
+
+            Serial.print("Setting turnout ");
+            Serial.print(turnoutId);
+            Serial.print(" to position ");
+            Serial.println(targetPosition);
+
+            return;
+        }
+    }
 }

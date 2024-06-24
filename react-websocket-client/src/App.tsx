@@ -7,6 +7,7 @@ import Alert from "@mui/material/Alert";
 import TurnoutList from "./TurnoutList";
 import { IMessageEvent, w3cwebsocket } from "websocket";
 import { TurnoutSetting } from "./types";
+import { TURNOUT_MAX_ENDPOINT, TURNOUT_MAX_THROW_SPEED, TURNOUT_MIN_ENDPOINT, TURNOUT_MIN_THROW_SPEED } from "./Turnout";
 
 function App() {
   const websocket = useRef<w3cwebsocket | null>(null);
@@ -43,7 +44,7 @@ function App() {
           setTurnoutSettings(dataFromServer.turnouts);
           setAlert({ message: "Turnouts list updated", severity: "success", open: true });
         } else if (dataFromServer.type === "turnoutTestComplete") {
-          handleTestComplete(dataFromServer.settings.id);
+          handleTestComplete(dataFromServer.turnoutId);
         }
       } catch (error) {
         console.error("Error parsing message", error);
@@ -67,10 +68,10 @@ function App() {
     sendMessage({ type: "turnoutSettings", settings: setting });
   }, []);
 
-  const sendTurnoutTest = useCallback((id: number) => {
+  const sendTurnoutTest = useCallback((id: number, targetPosition: number) => {
     const setting = turnoutSettings.find((s) => s.id === id);
     if (setting) {
-      sendMessage({ type: "turnoutTest", settings: setting });
+      sendMessage({ type: "turnoutTest", settings: setting, targetPosition });
     }
   }, [turnoutSettings]);
 
@@ -87,10 +88,11 @@ function App() {
       const newTurnout: TurnoutSetting = {
         id: turnoutSettings.length,
         address: turnoutSettings.length > 0 ? turnoutSettings[turnoutSettings.length - 1].address + 1 : 0,
-        closedEndpoint: 0,
-        openEndpoint: 180,
+        closedEndpoint: TURNOUT_MIN_ENDPOINT,
+        openEndpoint: TURNOUT_MAX_ENDPOINT,
         reversed: false,
         testInProgress: false,
+        throwSpeed: (TURNOUT_MAX_THROW_SPEED + TURNOUT_MIN_THROW_SPEED) / 2,
       };
       sendMessage({ type: "turnoutSettings", settings: newTurnout });
     } else {

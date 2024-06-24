@@ -1,6 +1,7 @@
 #include "Turnout.h"
 
-String Turnout::toJson() const {
+String Turnout::toJson() const
+{
   StaticJsonDocument<200> doc;
   doc["id"] = id;
   doc["address"] = address;
@@ -8,19 +9,21 @@ String Turnout::toJson() const {
   doc["openEndpoint"] = openEndpoint;
   doc["reversed"] = reversed;
   doc["testInProgress"] = testInProgress;
+  doc["throwSpeed"] = throwSpeed;
 
   String jsonString;
   serializeJson(doc, jsonString);
   return jsonString;
 }
 
-Turnout Turnout::fromJson(const JsonObject& json) {
+Turnout Turnout::fromJson(const JsonObject &json)
+{
   return Turnout(
-    json["id"],
-    json["address"],
-    json["closedEndpoint"],
-    json["openEndpoint"],
-    json["reversed"],
-    json["testInProgress"]
-  );
+      json["id"],
+      json["address"],
+      json["closedEndpoint"],
+      json["openEndpoint"],
+      json["reversed"],
+      json["testInProgress"],
+      json["throwSpeed"]);
 }

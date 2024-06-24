@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include <ESPAsyncWebServer.h>
+
 #include "WSEventHandler.h"
 #include "Turnout.h"
 #include "TurnoutManager.h"
@@ -65,13 +65,13 @@ void WSEventHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEve
     }
     else if (strcmp(msgType, TurnoutManager::TYPE_TURNOUT_TEST) == 0)
     {
-      receivedJson["type"] = TurnoutManager::TYPE_TURNOUT_TEST_COMPLETE;
-      String jsonString;
-      serializeJson(receivedJson, jsonString);
-      jsonString.toCharArray(dataBuffer, BUFFER_SIZE);
-      client->text(dataBuffer);
-      Serial.print("Sent data: ");
-      Serial.println(dataBuffer);
+      if (receivedJson.containsKey("settings"))
+      {
+        int targetPosition = receivedJson["targetPosition"];
+        JsonObject settings = receivedJson["settings"].as<JsonObject>();
+        Turnout turnout = Turnout::fromJson(settings);
+        turnoutManager.setTurnoutPosition(turnout.id, targetPosition, turnout.throwSpeed);
+      }
     }
     else
     {
@@ -102,4 +102,21 @@ void WSEventHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEve
         break;
       }
   }
+}
+
+void SendTestComplete(int turnoutId)
+{
+  receivedJson.clear();
+  receivedJson["type"] = TurnoutManager::TYPE_TURNOUT_TEST_COMPLETE;
+  receivedJson["turnoutId"] = turnoutId;
+  String jsonString;
+  serializeJson(receivedJson, jsonString);
+  jsonString.toCharArray(dataBuffer, BUFFER_SIZE);
+  for (AsyncWebSocketClient *c : clients)
+    if (c != nullptr)
+    {
+      c->text(dataBuffer);
+    }
+  Serial.print("Sent data: ");
+  Serial.println(dataBuffer);
 }

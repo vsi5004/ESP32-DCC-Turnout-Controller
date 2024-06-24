@@ -5,4 +5,5 @@ export interface TurnoutSetting {
   openEndpoint: number;
   reversed: boolean;
   testInProgress: boolean;
+  throwSpeed: number;
 }
