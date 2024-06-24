@@ -5,7 +5,7 @@ export interface TurnoutSetting {
   openEndpoint: number;
   reversed: boolean;
   startClosed: boolean;
-  testInProgress: boolean;
+  moveInProgress: boolean;
   throwSpeed: number;
   poweredFrog: boolean;
   reverseFrogPolarity: boolean;

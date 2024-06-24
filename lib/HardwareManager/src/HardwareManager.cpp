@@ -1,11 +1,15 @@
 #include "HardwareManager.h"
 #include "WSEventHandler.h"
+#include "TurnoutManager.h"
 #include <Adafruit_PWMServoDriver.h>
 
 static constexpr int SERVO_OFF_CYCLE = 4096;
 static constexpr int SERVO_FREQUENCY = 50;
 static constexpr int SERVO_MAX_POSITION = 600;
 static constexpr int SERVO_MIN_POSITION = 150;
+// Note: pins 34 and 35 are input only and will cause an error if used with digitalWrite
+static constexpr int RELAY_PINS[TurnoutManager::MAX_TURNOUTS] = {32,33,25,27,14,12,13,23,17,5,18,19};
+static constexpr int RELAY_INIT_STATE = HIGH;
 
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
@@ -13,11 +17,14 @@ HardwareManager::HardwareManager()
 {
 }
 
-void HardwareManager::initServos()
+void HardwareManager::init()
 {
     pwm.begin();
     pwm.setPWMFreq(SERVO_FREQUENCY);
-    delay(10);
+    for (int i = 0; i < TurnoutManager::MAX_TURNOUTS; i++)
+    {
+        pinMode(RELAY_PINS[i], OUTPUT);
+    }
 }
 
 void HardwareManager::updateServoPosition(Turnout *turnout)
@@ -31,31 +38,19 @@ void HardwareManager::updateServoPosition(Turnout *turnout)
         if (turnout->currentPosition > position)
         {
             turnout->currentPosition--;
-            pwm.setPWM(channel, 0, map(turnout->currentPosition, 0, 180, SERVO_MIN_POSITION, SERVO_MAX_POSITION));
-            Serial.print("Moving turnout ");
-            Serial.print(turnout->id);
-            Serial.print(" to position ");
-            Serial.print(turnout->currentPosition);
-            Serial.print(" with target position ");
-            Serial.println(turnout->targetPosition);
+            setServoPosition(channel, turnout);
         }
         else if (turnout->currentPosition < position)
         {
             turnout->currentPosition++;
-            pwm.setPWM(channel, 0, map(turnout->currentPosition, 0, 180, SERVO_MIN_POSITION, SERVO_MAX_POSITION));
-            Serial.print("Moving turnout ");
-            Serial.print(turnout->id);
-            Serial.print(" to position ");
-            Serial.print(turnout->currentPosition);
-            Serial.print(" with target position ");
-            Serial.println(turnout->targetPosition);
+            setServoPosition(channel, turnout);
         }
         else
         {
-            pwm.setPWM(channel, 0, SERVO_OFF_CYCLE);
-            if (turnout->testInProgress)
+            disableServo(channel);
+            if (turnout->moveInProgress)
             {
-                turnout->testInProgress = false;
+                turnout->moveInProgress = false;
                 SendTestComplete(turnout->id);
                 Serial.print("Turnout ");
                 Serial.print(turnout->id);
@@ -65,4 +60,29 @@ void HardwareManager::updateServoPosition(Turnout *turnout)
         }
         turnout->lastMoveTime = currentMillis;
     }
+}
+
+void HardwareManager::disableServo(int channel)
+{
+    pwm.setPWM(channel, 0, SERVO_OFF_CYCLE);
+}
+
+void HardwareManager::setServoPosition(const int channel, const Turnout *turnout)
+{
+    pwm.setPWM(channel, 0, map(turnout->currentPosition, 0, 180, SERVO_MIN_POSITION, SERVO_MAX_POSITION));
+    Serial.print("Moving turnout ");
+    Serial.print(turnout->id);
+    Serial.print(" to position ");
+    Serial.print(turnout->currentPosition);
+    Serial.print(" with target position ");
+    Serial.println(turnout->targetPosition);
+}
+
+void HardwareManager::setRelayPostion(const int channel, const bool state)
+{
+    digitalWrite(RELAY_PINS[channel], state);
+    Serial.print("Setting relay ");
+    Serial.print(channel);
+    Serial.print(" to ");
+    Serial.println(state ? "ON" : "OFF");
 }

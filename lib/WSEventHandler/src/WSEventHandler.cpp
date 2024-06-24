@@ -70,7 +70,8 @@ void WSEventHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEve
         int targetPosition = receivedJson["targetPosition"];
         JsonObject settings = receivedJson["settings"].as<JsonObject>();
         Turnout turnout = Turnout::fromJson(settings);
-        turnoutManager.setTurnoutPosition(turnout.id, targetPosition, turnout.throwSpeed);
+        bool setFrogClosed = turnoutManager.calculateFrogPolarityClosed(turnout, targetPosition);
+        turnoutManager.setTurnoutPosition(turnout.id, targetPosition, setFrogClosed, turnout.throwSpeed);
       }
     }
     else

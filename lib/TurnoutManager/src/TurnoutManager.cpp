@@ -3,7 +3,6 @@
 #include <LittleFS.h>
 #include "HardwareManager.h"
 
-
 HardwareManager hardwareManager;
 
 TurnoutManager::TurnoutManager()
@@ -65,7 +64,7 @@ void TurnoutManager::saveTurnouts()
         obj["openEndpoint"] = turnouts[i]->openEndpoint;
         obj["reversed"] = turnouts[i]->reversed;
         obj["startClosed"] = turnouts[i]->startClosed;
-        obj["testInProgress"] = turnouts[i]->testInProgress;
+        obj["moveInProgress"] = turnouts[i]->moveInProgress;
         obj["throwSpeed"] = turnouts[i]->throwSpeed;
         obj["poweredFrog"] = turnouts[i]->poweredFrog;
         obj["reverseFrogPolarity"] = turnouts[i]->reverseFrogPolarity;
@@ -121,7 +120,7 @@ String TurnoutManager::turnoutsToJson() const
         turnoutObj["openEndpoint"] = turnouts[i]->openEndpoint;
         turnoutObj["reversed"] = turnouts[i]->reversed;
         turnoutObj["startClosed"] = turnouts[i]->startClosed;
-        turnoutObj["testInProgress"] = turnouts[i]->testInProgress;
+        turnoutObj["moveInProgress"] = turnouts[i]->moveInProgress;
         turnoutObj["throwSpeed"] = turnouts[i]->throwSpeed;
         turnoutObj["poweredFrog"] = turnouts[i]->poweredFrog;
         turnoutObj["reverseFrogPolarity"] = turnouts[i]->reverseFrogPolarity;
@@ -134,7 +133,33 @@ String TurnoutManager::turnoutsToJson() const
 
 void TurnoutManager::initHardwareManager()
 {
-    hardwareManager.initServos();
+    hardwareManager.init();
+}
+
+void TurnoutManager::initTurnouts()
+{
+    for (int i = 0; i < turnoutCount; i++)
+    {
+        if (turnouts[i]->reversed)
+        {
+            turnouts[i]->currentPosition = turnouts[i]->startClosed ? turnouts[i]->openEndpoint : turnouts[i]->closedEndpoint;
+            if (turnouts[i]->poweredFrog)
+            {
+                hardwareManager.setRelayPostion(turnouts[i]->id, turnouts[i]->startClosed ? turnouts[i]->reverseFrogPolarity : !turnouts[i]->reverseFrogPolarity);
+            }
+        }
+        else
+        {
+            turnouts[i]->currentPosition = turnouts[i]->startClosed ? turnouts[i]->closedEndpoint : turnouts[i]->openEndpoint;
+            if (turnouts[i]->poweredFrog)
+            {
+                hardwareManager.setRelayPostion(turnouts[i]->id, turnouts[i]->startClosed ? !turnouts[i]->reverseFrogPolarity : turnouts[i]->reverseFrogPolarity);
+            }
+        }
+        turnouts[i]->targetPosition = turnouts[i]->currentPosition;
+        hardwareManager.setServoPosition(i, turnouts[i]);
+        hardwareManager.disableServo(i);
+    }
 }
 
 void TurnoutManager::updateTurnoutPositions()
@@ -145,7 +170,7 @@ void TurnoutManager::updateTurnoutPositions()
     }
 }
 
-void TurnoutManager::setTurnoutPosition(int turnoutId, int targetPosition, int throwSpeed = 0)
+void TurnoutManager::setTurnoutPosition(int turnoutId, int targetPosition, bool frogPolarity = true, int throwSpeed = 0)
 {
     for (int i = 0; i < turnoutCount; i++)
     {
@@ -153,7 +178,7 @@ void TurnoutManager::setTurnoutPosition(int turnoutId, int targetPosition, int t
         {
             turnouts[i]->targetPosition = targetPosition;
             turnouts[i]->lastMoveTime = millis();
-            turnouts[i]->testInProgress = true;
+            turnouts[i]->moveInProgress = true;
 
             // Set throw speed if provided for endpoint testing, otherwise use the existing speed
             // Note that 0 is not a valid option in the UI, so it is safe to use as a default value
@@ -162,12 +187,35 @@ void TurnoutManager::setTurnoutPosition(int turnoutId, int targetPosition, int t
                 turnouts[i]->throwSpeed = throwSpeed;
             }
 
+            hardwareManager.setRelayPostion(turnouts[i]->id, frogPolarity);
+
             Serial.print("Setting turnout ");
             Serial.print(turnoutId);
             Serial.print(" to position ");
-            Serial.println(targetPosition);
+            Serial.print(targetPosition);
+            Serial.print(" with frog polarity ");
+            Serial.print(frogPolarity);
+            Serial.print(" and throw speed ");
+            Serial.println(throwSpeed);
 
             return;
         }
     }
+}
+
+bool TurnoutManager::calculateFrogPolarityClosed(const Turnout &turnout, int targetPosition)
+{
+  bool setFrogClosed = true;
+  if (turnout.poweredFrog)
+  {
+    if (targetPosition == turnout.closedEndpoint)
+    {
+      setFrogClosed = turnout.reversed ? turnout.reverseFrogPolarity : !turnout.reverseFrogPolarity;
+    }
+    else if (targetPosition == turnout.openEndpoint)
+    {
+      setFrogClosed = turnout.reversed ? !turnout.reverseFrogPolarity : turnout.reverseFrogPolarity;
+    }
+  }
+  return setFrogClosed;
 }

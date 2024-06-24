@@ -40,7 +40,7 @@ In the included application, setState is only called on websocket message so tha
 
 ## Installation and setup
 
-1. Install [VSCode](https://code.visualstudio.com/) or [VSCodium](https://vscodium.com/)
+1. Install [VSCode](https://code.visualstudio.com/)
     * Install the [Platform IO extension](https://platformio.org/install/ide?install=vscode)
 2. Install [Node.js](https://nodejs.org/en/) for npm and your extension of choice for JavaScript
 
@@ -50,3 +50,9 @@ There are two actions required to upload this to your ESP32.
 
 1. Upload the code (Platform IO -> Project Tasks -> esp32dev -> General -> Upload)
 2. Upload the React Web App (Platform IO -> Project Tasks -> esp32dev -> Platform -> Upload Filesystem Image)
+
+## Acknowledgements
+This project leans heavily on the following resources:
+* The well thought out template for hosting a React Captive Portal on an ESP32: https://github.com/h9419/ESP_AP_Webserver
+* A simple ESP32 DCC Decoder implementation, documented here: https://www.digitaltown.co.uk/project6ESP32DCCAccDecodert.php
+* Adafruit's fantastic series of boards and drivers, in this case the PCA9685: https://learn.adafruit.com/16-channel-pwm-servo-driver

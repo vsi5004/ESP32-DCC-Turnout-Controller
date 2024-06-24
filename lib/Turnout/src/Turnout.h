@@ -12,7 +12,7 @@ public:
   int openEndpoint;
   bool reversed;
   bool startClosed;
-  bool testInProgress;
+  bool moveInProgress;
   int currentPosition;
   int targetPosition;
   unsigned long lastMoveTime;
@@ -20,8 +20,8 @@ public:
   bool poweredFrog;
   bool reverseFrogPolarity;
 
-  Turnout(int id, int address, int closedEndpoint, int openEndpoint, bool reversed, bool startClosed, bool testInProgress, int throwSpeed, bool poweredFrog, bool reverseFrogPolarity)
-      : id(id), address(address), closedEndpoint(closedEndpoint), openEndpoint(openEndpoint), reversed(reversed), testInProgress(testInProgress),
+  Turnout(int id, int address, int closedEndpoint, int openEndpoint, bool reversed, bool startClosed, bool moveInProgress, int throwSpeed, bool poweredFrog, bool reverseFrogPolarity)
+      : id(id), address(address), closedEndpoint(closedEndpoint), openEndpoint(openEndpoint), reversed(reversed), moveInProgress(moveInProgress),
         currentPosition((openEndpoint + closedEndpoint) / 2), targetPosition(currentPosition), lastMoveTime(millis()), throwSpeed(throwSpeed),
         poweredFrog(poweredFrog), reverseFrogPolarity(reverseFrogPolarity), startClosed(startClosed) {};
   String toJson() const;

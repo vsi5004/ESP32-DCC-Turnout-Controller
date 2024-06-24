@@ -3,28 +3,29 @@
 
 #include "Turnout.h"
 
-#define MAX_TURNOUTS 12
-
 class TurnoutManager
 {
 public:
-  TurnoutManager();
-  void initHardwareManager();
-  void loadTurnouts();
-  void saveTurnouts();
-  void updateTurnout(const Turnout &turnout);
-  String turnoutsToJson() const;
-  void updateTurnoutPositions();
-  void setTurnoutPosition(int turnoutId, int targetPosition, int throwSpeed);
-
-  Turnout *turnouts[MAX_TURNOUTS];
-  int turnoutCount;
-
+  static constexpr int MAX_TURNOUTS = 12;
   static constexpr const char *TYPE_TURNOUTS_LIST = "turnoutsList";
   static constexpr const char *TYPE_GET_TURNOUTS = "getTurnouts";
   static constexpr const char *TYPE_TURNOUT_TEST = "turnoutTest";
   static constexpr const char *TYPE_TURNOUT_TEST_COMPLETE = "turnoutTestComplete";
   static constexpr const char *TYPE_TURNOUT_SETTINGS = "turnoutSettings";
+
+  TurnoutManager();
+  void initHardwareManager();
+  void initTurnouts();
+  void loadTurnouts();
+  void saveTurnouts();
+  void updateTurnout(const Turnout &turnout);
+  String turnoutsToJson() const;
+  void updateTurnoutPositions();
+  void setTurnoutPosition(int turnoutId, int targetPosition, bool frogPolarity, int throwSpeed);
+  static bool calculateFrogPolarityClosed(const Turnout &turnout, int targetPosition);
+
+  Turnout *turnouts[MAX_TURNOUTS];
+  int turnoutCount;
 
 private:
 };

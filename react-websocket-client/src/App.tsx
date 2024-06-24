@@ -92,7 +92,7 @@ function App() {
         openEndpoint: TURNOUT_MAX_ENDPOINT,
         reversed: false,
         startClosed: true,
-        testInProgress: false,
+        moveInProgress: false,
         throwSpeed: (TURNOUT_MAX_THROW_SPEED + TURNOUT_MIN_THROW_SPEED) / 2,
         poweredFrog: true,
         reverseFrogPolarity: false,
@@ -136,7 +136,7 @@ function App() {
         </Fab>
         <Snackbar
           open={alert.open}
-          autoHideDuration={2000}
+          autoHideDuration={1500}
           onClose={handleCloseAlert}
           anchorOrigin={{ vertical: "top", horizontal: "center" }}
         >

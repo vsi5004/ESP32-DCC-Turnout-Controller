@@ -132,7 +132,7 @@ const Turnout: React.FC<TurnoutProps> = ({
               name="startClosed"
             />
           </Box>
-          {turnout.testInProgress ? (
+          {turnout.moveInProgress ? (
             <Box display="flex" justifyContent="center" alignItems="center">
               <CircularProgress />
             </Box>

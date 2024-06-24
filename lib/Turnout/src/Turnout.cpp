@@ -9,7 +9,7 @@ String Turnout::toJson() const
   doc["openEndpoint"] = openEndpoint;
   doc["reversed"] = reversed;
   doc["startClosed"] = startClosed;
-  doc["testInProgress"] = testInProgress;
+  doc["moveInProgress"] = moveInProgress;
   doc["throwSpeed"] = throwSpeed;
   doc["poweredFrog"] = poweredFrog;
   doc["reverseFrogPolarity"] = reverseFrogPolarity;
@@ -28,7 +28,7 @@ Turnout Turnout::fromJson(const JsonObject &json)
       json["openEndpoint"],
       json["reversed"],
       json["startClosed"],
-      json["testInProgress"],
+      json["moveInProgress"],
       json["throwSpeed"],
       json["poweredFrog"],
       json["reverseFrogPolarity"]);

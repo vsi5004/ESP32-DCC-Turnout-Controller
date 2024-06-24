@@ -35,11 +35,12 @@ void setup()
   Serial.begin(115200);
 
   turnoutManager.initHardwareManager();
+  initFileSystem();
+  turnoutManager.loadTurnouts();
+  turnoutManager.initTurnouts();
   initWifi();
   configWifi();
   startWifi();
-  initFileSystem();
-  turnoutManager.loadTurnouts();
   startWebsocketServer();
 }
 
