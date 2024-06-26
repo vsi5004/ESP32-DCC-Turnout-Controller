@@ -13,28 +13,27 @@ import {
   CircularProgress
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { TurnoutSetting } from "./types";
-import LabeledSwitch from "./LabeledSwitch";
+import { TURNOUT_MAX_ENDPOINT, TURNOUT_MAX_THROW_SPEED, TURNOUT_MIN_ENDPOINT, TURNOUT_MIN_THROW_SPEED, TurnoutSetting, TurnoutSettingValue } from "./types";
+import LabeledSwitch from "./components/LabeledSwitch";
 
 interface TurnoutProps {
   turnout: TurnoutSetting;
-  handleChange: (id: number, field: string, value: any) => void;
+  handleChange: (id: number, field: string, value: TurnoutSettingValue) => void;
   sendTurnoutSetting: (setting: TurnoutSetting) => void;
   sendTurnoutTest: (id: number, targetPosition: number) => void;
   isConnected: boolean;
+  expandedAccordion: number | false;
+  setExpandedAccordion: React.Dispatch<React.SetStateAction<number | false>>;
 }
-
-export const TURNOUT_MIN_THROW_SPEED = 1;
-export const TURNOUT_MAX_THROW_SPEED = 20;
-export const TURNOUT_MIN_ENDPOINT = 0;
-export const TURNOUT_MAX_ENDPOINT = 180;
 
 const Turnout: React.FC<TurnoutProps> = ({
   turnout,
   handleChange,
   sendTurnoutSetting,
   sendTurnoutTest,
-  isConnected
+  isConnected,
+  expandedAccordion,
+  setExpandedAccordion
 }) => {
   const handleSliderChange = (id: number, values: number[]) => {
     handleChange(id, "openEndpoint", values[0]);
@@ -51,8 +50,16 @@ const Turnout: React.FC<TurnoutProps> = ({
     sendTurnoutTest(id, turnout.closedEndpoint);
   };
 
+  const handleAccordionChange = (isExpanded: boolean, id: number) => {
+    setExpandedAccordion(isExpanded ? id : false);
+  };
+
   return (
-    <Accordion key={turnout.id}>
+    <Accordion
+      key={turnout.id}
+      expanded={expandedAccordion === turnout.id}
+      onChange={(_, isExpanded) => handleAccordionChange(isExpanded, turnout.id)}
+    >
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Typography>Turnout {turnout.id + 1}</Typography>
       </AccordionSummary>

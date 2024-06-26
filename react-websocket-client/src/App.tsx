@@ -6,15 +6,15 @@ import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import TurnoutList from "./TurnoutList";
 import { IMessageEvent, w3cwebsocket } from "websocket";
-import { TurnoutSetting } from "./types";
-import { TURNOUT_MAX_ENDPOINT, TURNOUT_MAX_THROW_SPEED, TURNOUT_MIN_ENDPOINT, TURNOUT_MIN_THROW_SPEED } from "./Turnout";
+import { TurnoutSetting, TurnoutSettingValue } from "./types";
+import { TURNOUT_MAX_ENDPOINT, TURNOUT_MAX_THROW_SPEED, TURNOUT_MIN_ENDPOINT, TURNOUT_MIN_THROW_SPEED } from "./types";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
 import WifiTetheringIcon from '@mui/icons-material/WifiTethering';
 import WifiTetheringErrorIcon from '@mui/icons-material/WifiTetheringError';
-import ConnectionDialog from "./ConnectionDialog";
+import ConnectionDialog from "./components/ConnectionDialog";
 import Box from "@mui/material/Box";
 
 function App() {
@@ -27,6 +27,7 @@ function App() {
     open: false
   });
   const [connectionDialogOpen, setConnectionDialogOpen] = useState(false);
+  const [expandedAccordion, setExpandedAccordion] = useState<number | false>(false);
 
   useEffect(() => {
     websocket.current = new w3cwebsocket("ws://192.168.2.1/ws");
@@ -85,7 +86,7 @@ function App() {
     }
   }, [turnoutSettings]);
 
-  const handleChange = (id: number, field: string, value: any) => {
+  const handleChange = (id: number, field: string, value: TurnoutSettingValue) => {
     setTurnoutSettings((prevSettings) =>
       prevSettings.map((setting) =>
         setting.id === id ? { ...setting, [field]: value } : setting
@@ -107,7 +108,9 @@ function App() {
         poweredFrog: true,
         reverseFrogPolarity: false,
       };
+      setTurnoutSettings((prevSettings) => [...prevSettings, newTurnout]);
       sendMessage({ type: "turnoutSettings", settings: newTurnout });
+      setExpandedAccordion(turnoutSettings.length);
     } else {
       setAlert({ message: "Device supports a maximum of 12 turnouts, delete existing turnout before you add another", severity: "warning", open: true });
     }
@@ -153,6 +156,8 @@ function App() {
           sendTurnoutSetting={sendTurnoutSetting}
           sendTurnoutTest={sendTurnoutTest}
           isConnected={isConnected}
+          expandedAccordion={expandedAccordion}
+          setExpandedAccordion={setExpandedAccordion}
         />
         <Fab
           color="primary"

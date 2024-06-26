@@ -1,3 +1,5 @@
+export type TurnoutSettingValue = number | boolean | string;
+
 export interface TurnoutSetting {
   id: number;
   address: number;
@@ -10,3 +12,8 @@ export interface TurnoutSetting {
   poweredFrog: boolean;
   reverseFrogPolarity: boolean;
 }
+
+export const TURNOUT_MIN_THROW_SPEED = 1;
+export const TURNOUT_MAX_THROW_SPEED = 20;
+export const TURNOUT_MIN_ENDPOINT = 0;
+export const TURNOUT_MAX_ENDPOINT = 180;
