@@ -61,7 +61,7 @@ const Turnout: React.FC<TurnoutProps> = ({
       onChange={(_, isExpanded) => handleAccordionChange(isExpanded, turnout.id)}
     >
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Typography>Turnout {turnout.id + 1}</Typography>
+        <Typography>Turnout {turnout.id + 1} - DCC ADDR: {turnout.address}</Typography>
       </AccordionSummary>
       <AccordionDetails>
         <Box display="flex" flexDirection="column" gap={2} padding={2}>

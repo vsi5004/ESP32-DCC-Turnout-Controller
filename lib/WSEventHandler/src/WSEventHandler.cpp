@@ -60,6 +60,7 @@ void WSEventHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEve
       {
         JsonObject settings = receivedJson["settings"].as<JsonObject>();
         AppSettings newSettings = AppSettings::fromJson(settings);
+        bool rebootRequired = appSettings.wifiSSID != newSettings.wifiSSID;
         appSettings = newSettings;
         appSettings.saveToFile();
 
@@ -67,8 +68,18 @@ void WSEventHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEve
         jsonString.toCharArray(dataBuffer, BUFFER_SIZE);
         // Send updated settings to all clients
         for (AsyncWebSocketClient *c : clients)
+        {
           if (c != nullptr)
+          {
             c->text(dataBuffer);
+          }
+        }
+        if (rebootRequired)
+        {
+          loggerWSE.log(INFO, "Rebooting to apply new wifi settings");
+          delay(100);
+          ESP.restart();
+        }
       }
     }
     else if (strcmp(msgType, AppSettings::TYPE_GET_APP_SETTINGS) == 0)

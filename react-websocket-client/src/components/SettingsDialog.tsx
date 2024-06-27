@@ -28,9 +28,11 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
   const [localSettings, setLocalSettings] = useState<AppSettings>(settings);
   const [ssidError, setSsidError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
+  const [isSsidChanged, setIsSsidChanged] = useState<boolean>(false);
 
   useEffect(() => {
     setLocalSettings(settings);
+    setIsSsidChanged(false); // Reset the SSID changed flag when settings are loaded
   }, [settings]);
 
   const handleChange = (field: keyof AppSettings) => (
@@ -49,6 +51,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
       } else {
         setSsidError(null);
       }
+      setIsSsidChanged(value !== settings.wifiSSID);
     }
 
     // Validate Controller Name field
@@ -117,7 +120,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
         <Button onClick={handleSave} variant="contained" color="primary" disabled={!!ssidError || !!nameError}>
-          Save
+          {isSsidChanged ? 'Save & Restart' : 'Save'}
         </Button>
       </DialogActions>
     </Dialog>
