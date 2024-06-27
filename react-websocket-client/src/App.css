@@ -3,6 +3,7 @@ html,
 body {
   height: 100%;
   margin: 0;
+  background-color: inherit; /* Inherit the background color from the theme */
 }
 
 .wrapper {
@@ -16,5 +17,4 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #f5f5f5;
 }

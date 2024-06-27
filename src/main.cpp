@@ -6,19 +6,21 @@
 #include <WSEventHandler.h>
 #include <Turnout.h>
 #include <TurnoutManager.h>
+#include <AppSettings.h>
 #include <Elog.h>
 
-#define SSID "ESP32 DCC Turnout Controller"
 #define DNS_PORT 53
 
 const IPAddress apIP(192, 168, 2, 1);
 const IPAddress gateway(255, 255, 255, 0);
+const char *defaultName = "DCC Turnout Controller";
 
 DNSServer dnsServer;
 AsyncWebServer server(80);
 AsyncWebSocket websocket("/ws");
 Elog logger;
 TurnoutManager turnoutManager;
+AppSettings appSettings(defaultName, defaultName, false, true);
 
 void startWifi();
 void initFileSystem();
@@ -39,6 +41,7 @@ void setup()
   turnoutManager.init();
   initWSEventHandler();
   initFileSystem();
+  appSettings.init();
   turnoutManager.loadTurnouts();
   turnoutManager.initTurnouts();
   initWifi();
@@ -92,7 +95,7 @@ void initWifi()
   WiFi.disconnect();
   WiFi.mode(WIFI_OFF);
   WiFi.mode(WIFI_AP);
-  if (!WiFi.softAP(SSID))
+  if (!WiFi.softAP(appSettings.wifiSSID))
   {
     logger.log(CRITICAL, "AP Start Failed");
     while (true)

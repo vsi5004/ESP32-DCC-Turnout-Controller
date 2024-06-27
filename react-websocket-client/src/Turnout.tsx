@@ -41,12 +41,12 @@ const Turnout: React.FC<TurnoutProps> = ({
   };
 
   const handleTestThrow = (id: number) => {
-    handleChange(id, "testInProgress", true);
+    handleChange(id, "moveInProgress", true);
     sendTurnoutTest(id, turnout.openEndpoint);
   };
 
   const handleTestClose = (id: number) => {
-    handleChange(id, "testInProgress", true);
+    handleChange(id, "moveInProgress", true);
     sendTurnoutTest(id, turnout.closedEndpoint);
   };
 

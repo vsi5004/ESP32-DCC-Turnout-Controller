@@ -62,7 +62,7 @@ void TurnoutManager::loadTurnouts()
 
 void TurnoutManager::saveTurnouts()
 {
-    StaticJsonDocument<2000> doc;
+    StaticJsonDocument<2500> doc;
     for (int i = 0; i < turnoutCount; i++)
     {
         JsonObject obj = doc.createNestedObject();
@@ -116,7 +116,7 @@ void TurnoutManager::updateTurnout(const Turnout &turnout)
 
 String TurnoutManager::turnoutsToJson() const
 {
-    StaticJsonDocument<2000> doc;
+    StaticJsonDocument<2500> doc;
     doc["type"] = TYPE_TURNOUTS_LIST;
     JsonArray turnoutsArray = doc.createNestedArray("turnouts");
     for (int i = 0; i < turnoutCount; i++)

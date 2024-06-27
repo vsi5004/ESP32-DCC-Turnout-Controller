@@ -4,6 +4,7 @@
 #include "WSEventHandler.h"
 #include "Turnout.h"
 #include "TurnoutManager.h"
+#include "AppSettings.h"
 
 // Allocate memory for received json data, assuming list of 12 turnouts and their settings is around
 // 2048 bytes long with some extra for future growth
@@ -12,8 +13,9 @@ StaticJsonDocument<BUFFER_SIZE> receivedJson;
 char dataBuffer[BUFFER_SIZE] = "{}";
 AsyncWebSocketClient *clients[10] = {nullptr};
 
-// External reference to TurnoutManager instance in main.cpp
+// External references to TurnoutManager and AppSettings instances in main.cpp
 extern TurnoutManager turnoutManager;
+extern AppSettings appSettings;
 
 Elog loggerWSE;
 
@@ -49,6 +51,29 @@ void WSEventHandler(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEve
     if (strcmp(msgType, TurnoutManager::TYPE_GET_TURNOUTS) == 0)
     {
       String jsonString = turnoutManager.turnoutsToJson();
+      jsonString.toCharArray(dataBuffer, BUFFER_SIZE);
+      client->text(dataBuffer);
+    }
+    else if (strcmp(msgType, AppSettings::TYPE_APP_SETTINGS) == 0)
+    {
+      if (receivedJson.containsKey("settings"))
+      {
+        JsonObject settings = receivedJson["settings"].as<JsonObject>();
+        AppSettings newSettings = AppSettings::fromJson(settings);
+        appSettings = newSettings;
+        appSettings.saveToFile();
+
+        String jsonString = appSettings.toNestedJson();
+        jsonString.toCharArray(dataBuffer, BUFFER_SIZE);
+        // Send updated settings to all clients
+        for (AsyncWebSocketClient *c : clients)
+          if (c != nullptr)
+            c->text(dataBuffer);
+      }
+    }
+    else if (strcmp(msgType, AppSettings::TYPE_GET_APP_SETTINGS) == 0)
+    {
+      String jsonString = appSettings.toNestedJson();
       jsonString.toCharArray(dataBuffer, BUFFER_SIZE);
       client->text(dataBuffer);
     }

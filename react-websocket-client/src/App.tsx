@@ -6,16 +6,31 @@ import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import TurnoutList from "./TurnoutList";
 import { IMessageEvent, w3cwebsocket } from "websocket";
-import { TurnoutSetting, TurnoutSettingValue } from "./types";
-import { TURNOUT_MAX_ENDPOINT, TURNOUT_MAX_THROW_SPEED, TURNOUT_MIN_ENDPOINT, TURNOUT_MIN_THROW_SPEED } from "./types";
+import { TurnoutSetting, AppSettings, TurnoutSettingValue, TURNOUT_MAX_ENDPOINT, TURNOUT_MAX_THROW_SPEED, TURNOUT_MIN_ENDPOINT, TURNOUT_MIN_THROW_SPEED } from "./types";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
+import SettingsIcon from '@mui/icons-material/Settings';
 import WifiTetheringIcon from '@mui/icons-material/WifiTethering';
 import WifiTetheringErrorIcon from '@mui/icons-material/WifiTetheringError';
 import ConnectionDialog from "./components/ConnectionDialog";
+import SettingsDialog from "./components/SettingsDialog";
 import Box from "@mui/material/Box";
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+
+const lightTheme = createTheme({
+  palette: {
+    mode: 'light',
+  },
+});
+
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+  },
+});
 
 function App() {
   const websocket = useRef<w3cwebsocket | null>(null);
@@ -27,7 +42,14 @@ function App() {
     open: false
   });
   const [connectionDialogOpen, setConnectionDialogOpen] = useState(false);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [expandedAccordion, setExpandedAccordion] = useState<number | false>(false);
+  const [appSettings, setAppSettings] = useState<AppSettings>({
+    controllerName: '',
+    wifiSSID: '',
+    darkMode: false,
+    autoOpenOn: false,
+  });
 
   useEffect(() => {
     websocket.current = new w3cwebsocket("ws://192.168.2.1/ws");
@@ -36,6 +58,7 @@ function App() {
       setIsConnected(true);
       console.log("WebSocket Client Connected");
       websocket.current?.send(JSON.stringify({ type: "getTurnouts" }));
+      websocket.current?.send(JSON.stringify({ type: "getAppSettings" }));
     };
 
     websocket.current.onclose = () => {
@@ -49,13 +72,17 @@ function App() {
 
     websocket.current.onmessage = (message: IMessageEvent) => {
       try {
-        console.log(message.data.toString())
         const dataFromServer = JSON.parse(message.data.toString());
+        console.log("Received message:", dataFromServer);
         if (dataFromServer.type === "turnoutsList") {
           setTurnoutSettings(dataFromServer.turnouts);
           setAlert({ message: "Turnouts list updated", severity: "success", open: true });
         } else if (dataFromServer.type === "turnoutTestComplete") {
           handleMoveComplete(dataFromServer.turnoutId);
+        } else if (dataFromServer.type === "appSettings") {
+          console.log("Updating app settings:", dataFromServer.settings);
+          setAppSettings(dataFromServer.settings);
+          setAlert({ message: "App Settings updated", severity: "success", open: true });
         }
       } catch (error) {
         console.error("Error parsing message", error);
@@ -110,7 +137,9 @@ function App() {
       };
       setTurnoutSettings((prevSettings) => [...prevSettings, newTurnout]);
       sendMessage({ type: "turnoutSettings", settings: newTurnout });
-      setExpandedAccordion(turnoutSettings.length);
+      if (appSettings.autoOpenOn) {
+        setExpandedAccordion(turnoutSettings.length);
+      }
     } else {
       setAlert({ message: "Device supports a maximum of 12 turnouts, delete existing turnout before you add another", severity: "warning", open: true });
     }
@@ -132,59 +161,84 @@ function App() {
     setConnectionDialogOpen(true);
   };
 
+  const handleSettingsClick = () => {
+    setSettingsDialogOpen(true);
+  };
+
   const handleCloseConnectionDialog = () => {
     setConnectionDialogOpen(false);
   };
 
+  const handleCloseSettingsDialog = () => {
+    setSettingsDialogOpen(false);
+  };
+
+  const handleSaveSettings = (newSettings: AppSettings) => {
+    setAppSettings(newSettings);
+    sendMessage({ type: "appSettings", settings: newSettings });
+  };
+
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            DCC Turnout Controller
-          </Typography>
-          <IconButton color="inherit" onClick={handleConnectionStatusClick}>
-            {isConnected ? <WifiTetheringIcon /> : <WifiTetheringErrorIcon />}
-          </IconButton>
-        </Toolbar>
-      </AppBar>
-    <div className="centered">
-      <div className="wrapper">
-        <TurnoutList
-          turnoutSettings={turnoutSettings}
-          handleChange={handleChange}
-          sendTurnoutSetting={sendTurnoutSetting}
-          sendTurnoutTest={sendTurnoutTest}
-          isConnected={isConnected}
-          expandedAccordion={expandedAccordion}
-          setExpandedAccordion={setExpandedAccordion}
-        />
-        <Fab
-          color="primary"
-          aria-label="add"
-          onClick={handleAddTurnout}
-          style={{ position: "fixed", bottom: 16, right: 16 }}
-        >
-          <AddIcon />
-        </Fab>
-        <Snackbar
-          open={alert.open}
-          autoHideDuration={1500}
-          onClose={handleCloseAlert}
-          anchorOrigin={{ vertical: "top", horizontal: "center" }}
-        >
-          <Alert onClose={handleCloseAlert} severity={alert.severity} sx={{ width: '100%' }}>
-            {alert.message}
-          </Alert>
-        </Snackbar>
-        <ConnectionDialog
-          open={connectionDialogOpen}
-          isConnected={isConnected}
-          onClose={handleCloseConnectionDialog}
-        />
-      </div>
-    </div>
-    </Box>
+    <ThemeProvider theme={appSettings.darkMode ? darkTheme : lightTheme}>
+      <CssBaseline />
+      <Box sx={{ flexGrow: 1 }}>
+        <AppBar position="static">
+          <Toolbar>
+            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+              {appSettings.controllerName || "DCC Turnout Controller"}
+            </Typography>
+            <IconButton color="inherit" onClick={handleSettingsClick}>
+              <SettingsIcon />
+            </IconButton>
+            <IconButton color="inherit" onClick={handleConnectionStatusClick}>
+              {isConnected ? <WifiTetheringIcon /> : <WifiTetheringErrorIcon />}
+            </IconButton>
+          </Toolbar>
+        </AppBar>
+        <div className="centered">
+          <div className="wrapper">
+            <TurnoutList
+              turnoutSettings={turnoutSettings}
+              handleChange={handleChange}
+              sendTurnoutSetting={sendTurnoutSetting}
+              sendTurnoutTest={sendTurnoutTest}
+              isConnected={isConnected}
+              expandedAccordion={expandedAccordion}
+              setExpandedAccordion={setExpandedAccordion}
+            />
+            <Fab
+              color="primary"
+              aria-label="add"
+              onClick={handleAddTurnout}
+              style={{ position: "fixed", bottom: 16, right: 16 }}
+            >
+              <AddIcon />
+            </Fab>
+            <Snackbar
+              open={alert.open}
+              autoHideDuration={1500}
+              onClose={handleCloseAlert}
+              anchorOrigin={{ vertical: "top", horizontal: "center" }}
+            >
+              <Alert onClose={handleCloseAlert} severity={alert.severity} sx={{ width: '100%' }}>
+                {alert.message}
+              </Alert>
+            </Snackbar>
+            <ConnectionDialog
+              open={connectionDialogOpen}
+              isConnected={isConnected}
+              onClose={handleCloseConnectionDialog}
+            />
+            <SettingsDialog
+              open={settingsDialogOpen}
+              onClose={handleCloseSettingsDialog}
+              onSave={handleSaveSettings}
+              settings={appSettings}
+            />
+          </div>
+        </div>
+      </Box>
+    </ThemeProvider>
   );
 }
 

@@ -1,5 +1,12 @@
 export type TurnoutSettingValue = number | boolean | string;
 
+export interface AppSettings {
+  controllerName: string;
+  wifiSSID: string;
+  darkMode: boolean;
+  autoOpenOn: boolean;
+}
+
 export interface TurnoutSetting {
   id: number;
   address: number;
