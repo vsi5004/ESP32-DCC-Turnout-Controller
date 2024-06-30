@@ -9,19 +9,28 @@ static constexpr int SERVO_FREQUENCY = 50;
 static constexpr int SERVO_MAX_POSITION = 600;
 static constexpr int SERVO_MIN_POSITION = 150;
 // Note: pins 34 and 35 are input only and will cause an error if used with digitalWrite
-static constexpr int RELAY_PINS[TurnoutManager::MAX_TURNOUTS] = {32,33,25,27,14,12,13,23,17,5,18,19};
+static constexpr int RELAY_PINS[TurnoutManager::MAX_TURNOUTS] = {32,33,25,26,27,14,12,13,19,18,5,17};
 static constexpr int RELAY_INIT_STATE = HIGH;
+static constexpr int DCC_PIN = 4;
+static constexpr int BUTTON_PIN = 2;
 
 Elog loggerHWM;
 
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
+volatile bool bRebootPending;
 
 HardwareManager::HardwareManager()
 {
 }
 
+void IRAM_ATTR handleButtonChange()
+{
+    bRebootPending = true;
+}
+
 void HardwareManager::init()
 {
+    bRebootPending = false;
     loggerHWM.addSerialLogging(Serial, "HWManager", DEBUG);
     pwm.begin();
     pwm.setPWMFreq(SERVO_FREQUENCY);
@@ -29,6 +38,10 @@ void HardwareManager::init()
     {
         pinMode(RELAY_PINS[i], OUTPUT);
     }
+    pinMode(DCC_PIN, INPUT);
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), handleButtonChange, CHANGE);
+    m_bButtonPressed = digitalRead(BUTTON_PIN);
 }
 
 void HardwareManager::updateServoPosition(Turnout *turnout)
@@ -74,8 +87,13 @@ void HardwareManager::setServoPosition(const int channel, const Turnout *turnout
     loggerHWM.log(DEBUG, "Moving turnout %d to position %d with target position %d", turnout->id, turnout->currentPosition, turnout->targetPosition);
 }
 
-void HardwareManager::setRelayPostion(const int channel, const bool state)
+void HardwareManager::setRelayPosition(const int channel, const bool state)
 {
     digitalWrite(RELAY_PINS[channel], state);
     loggerHWM.log(DEBUG, "Setting relay %d to %s", channel, state ? "ON" : "OFF");
+}
+
+bool HardwareManager::isRebootPending()
+{
+    return bRebootPending;
 }

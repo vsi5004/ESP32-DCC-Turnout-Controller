@@ -1,37 +1,16 @@
 #include <Arduino.h>
-#include <WiFi.h>
-#include <DNSServer.h>
-#include <ESPAsyncWebServer.h>
 #include <LittleFS.h>
-#include <WSEventHandler.h>
-#include <Turnout.h>
 #include <TurnoutManager.h>
-#include <AppSettings.h>
+#include <WifiManager.h>
 #include <Elog.h>
 
-#define DNS_PORT 53
+bool wifiEnabled = false;
 
-const IPAddress apIP(192, 168, 2, 1);
-const IPAddress gateway(255, 255, 255, 0);
-const char *defaultName = "DCC Turnout Controller";
-
-DNSServer dnsServer;
-AsyncWebServer server(80);
-AsyncWebSocket websocket("/ws");
 Elog logger;
 TurnoutManager turnoutManager;
-AppSettings appSettings(defaultName, defaultName, false, true);
+WifiManager wifiManager;
 
-void startWifi();
 void initFileSystem();
-void configWifi();
-void initWifi();
-void startWebsocketServer();
-
-void redirectToIndex(AsyncWebServerRequest *request)
-{
-  request->redirect("http://" + apIP.toString());
-}
 
 void setup()
 {
@@ -39,31 +18,20 @@ void setup()
   logger.addSerialLogging(Serial, "Main", DEBUG);
 
   turnoutManager.init();
-  initWSEventHandler();
   initFileSystem();
-  appSettings.init();
   turnoutManager.loadTurnouts();
   turnoutManager.initTurnouts();
-  initWifi();
-  configWifi();
-  startWifi();
-  startWebsocketServer();
-}
-
-void startWebsocketServer()
-{
-  websocket.onEvent(WSEventHandler);
-  server.addHandler(&websocket);
-  server.serveStatic("/", LittleFS, "/www/").setDefaultFile("index.html");
-  server.onNotFound(redirectToIndex);
-  server.begin();
-  logger.log(INFO, "Web Server Started");
-}
-
-void startWifi()
-{
-  dnsServer.start(DNS_PORT, "*", apIP);
-  logger.log(INFO, "WiFi AP is now running at IP address: %s", WiFi.softAPIP().toString());
+  wifiEnabled = turnoutManager.shouldWifiBeEnabled();
+  if (wifiEnabled)
+  {
+    logger.log(INFO, "Starting with WiFi enabled");
+    wifiManager.init();
+  }
+  else
+  {
+    logger.log(INFO, "Starting with DCC enabled");
+    // Do DCC related things
+  }
 }
 
 void initFileSystem()
@@ -78,36 +46,17 @@ void initFileSystem()
   }
 }
 
-void configWifi()
-{
-  if (!WiFi.softAPConfig(apIP, apIP, gateway))
-  {
-    logger.log(CRITICAL, "AP Config Failed");
-    while (true)
-    {
-      delay(1000);
-    }
-  }
-}
-
-void initWifi()
-{
-  WiFi.disconnect();
-  WiFi.mode(WIFI_OFF);
-  WiFi.mode(WIFI_AP);
-  if (!WiFi.softAP(appSettings.wifiSSID))
-  {
-    logger.log(CRITICAL, "AP Start Failed");
-    while (true)
-    {
-      delay(1000);
-    }
-  }
-}
-
 void loop()
 {
-  dnsServer.processNextRequest();
+  if (wifiEnabled)
+  {
+    wifiManager.processNextRequest();
+  }
+  else
+  {
+    // Do DCC related things
+  }
   turnoutManager.updateTurnoutPositions();
+  turnoutManager.checkForReboot();
   vTaskDelay(1);
 }

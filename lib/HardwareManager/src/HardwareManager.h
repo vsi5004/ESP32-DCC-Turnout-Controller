@@ -11,7 +11,12 @@ class HardwareManager
     void updateServoPosition(Turnout *turnout);
     void disableServo(int channel);
     void setServoPosition(const int channel, const Turnout *turnout);
-    void setRelayPostion(const int channel, const bool state);
+    void setRelayPosition(const int channel, const bool state);
+    bool isRebootPending();
+    bool isButtonPressed() { return m_bButtonPressed; };
+
+  private:
+    bool m_bButtonPressed;
 };
 
 #endif // HARDWARE_MANAGER_H

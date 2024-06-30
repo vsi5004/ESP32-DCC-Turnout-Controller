@@ -23,6 +23,8 @@ public:
   void updateTurnoutPositions();
   void setTurnoutPosition(int turnoutId, int targetPosition, bool frogPolarity, int throwSpeed);
   static bool calculateFrogPolarityClosed(const Turnout &turnout, int targetPosition);
+  void checkForReboot();
+  bool shouldWifiBeEnabled();
 
   Turnout *turnouts[MAX_TURNOUTS];
   int turnoutCount;

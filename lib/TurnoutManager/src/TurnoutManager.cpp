@@ -149,7 +149,7 @@ void TurnoutManager::initTurnouts()
             turnouts[i]->currentPosition = turnouts[i]->startClosed ? turnouts[i]->openEndpoint : turnouts[i]->closedEndpoint;
             if (turnouts[i]->poweredFrog)
             {
-                hardwareManager.setRelayPostion(turnouts[i]->id, turnouts[i]->startClosed ? turnouts[i]->reverseFrogPolarity : !turnouts[i]->reverseFrogPolarity);
+                hardwareManager.setRelayPosition(turnouts[i]->id, turnouts[i]->startClosed ? turnouts[i]->reverseFrogPolarity : !turnouts[i]->reverseFrogPolarity);
             }
         }
         else
@@ -157,7 +157,7 @@ void TurnoutManager::initTurnouts()
             turnouts[i]->currentPosition = turnouts[i]->startClosed ? turnouts[i]->closedEndpoint : turnouts[i]->openEndpoint;
             if (turnouts[i]->poweredFrog)
             {
-                hardwareManager.setRelayPostion(turnouts[i]->id, turnouts[i]->startClosed ? !turnouts[i]->reverseFrogPolarity : turnouts[i]->reverseFrogPolarity);
+                hardwareManager.setRelayPosition(turnouts[i]->id, turnouts[i]->startClosed ? !turnouts[i]->reverseFrogPolarity : turnouts[i]->reverseFrogPolarity);
             }
         }
         turnouts[i]->targetPosition = turnouts[i]->currentPosition;
@@ -191,7 +191,7 @@ void TurnoutManager::setTurnoutPosition(int turnoutId, int targetPosition, bool 
                 turnouts[i]->throwSpeed = throwSpeed;
             }
 
-            hardwareManager.setRelayPostion(turnouts[i]->id, frogPolarity);
+            hardwareManager.setRelayPosition(turnouts[i]->id, frogPolarity);
             loggerTNM.log(INFO, "Setting turnout %d to position %d with frog polarity %d and throw speed %d", turnoutId, targetPosition, frogPolarity, throwSpeed);
             return;
         }
@@ -213,4 +213,19 @@ bool TurnoutManager::calculateFrogPolarityClosed(const Turnout &turnout, int tar
     }
   }
   return setFrogClosed;
+}
+
+void TurnoutManager::checkForReboot()
+{
+    if (hardwareManager.isRebootPending())
+    {
+        loggerTNM.log(INFO, "Rebooting due to switch position change");
+        delay(10);
+        ESP.restart();
+    }
+}
+
+bool TurnoutManager::shouldWifiBeEnabled()
+{
+    return hardwareManager.isButtonPressed();
 }
