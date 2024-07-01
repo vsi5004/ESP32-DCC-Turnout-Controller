@@ -2,12 +2,14 @@
 #include <LittleFS.h>
 #include <TurnoutManager.h>
 #include <WifiManager.h>
+#include <DCCManager.h>
 #include <Elog.h>
 
 bool wifiEnabled = false;
 
 Elog logger;
 TurnoutManager turnoutManager;
+DCCManager dccManager;
 WifiManager wifiManager;
 
 void initFileSystem();
@@ -30,7 +32,7 @@ void setup()
   else
   {
     logger.log(INFO, "Starting with DCC enabled");
-    // Do DCC related things
+    dccManager.init();
   }
 }
 
@@ -54,9 +56,9 @@ void loop()
   }
   else
   {
-    // Do DCC related things
+    dccManager.processDCC();
   }
-  turnoutManager.updateTurnoutPositions();
+  //turnoutManager.updateTurnoutPositions();
   turnoutManager.checkForReboot();
-  vTaskDelay(1);
+  //vTaskDelay(1);
 }

@@ -11,7 +11,6 @@ static constexpr int SERVO_MIN_POSITION = 150;
 // Note: pins 34 and 35 are input only and will cause an error if used with digitalWrite
 static constexpr int RELAY_PINS[TurnoutManager::MAX_TURNOUTS] = {32,33,25,26,27,14,12,13,19,18,5,17};
 static constexpr int RELAY_INIT_STATE = HIGH;
-static constexpr int DCC_PIN = 4;
 static constexpr int BUTTON_PIN = 2;
 
 Elog loggerHWM;
@@ -38,7 +37,6 @@ void HardwareManager::init()
     {
         pinMode(RELAY_PINS[i], OUTPUT);
     }
-    pinMode(DCC_PIN, INPUT);
     pinMode(BUTTON_PIN, INPUT_PULLUP);
     attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), handleButtonChange, CHANGE);
     m_bButtonPressed = digitalRead(BUTTON_PIN);
