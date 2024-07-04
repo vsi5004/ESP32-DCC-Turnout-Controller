@@ -9,10 +9,29 @@ bool wifiEnabled = false;
 
 Elog logger;
 TurnoutManager turnoutManager;
-DCCManager dccManager;
+DCCManager dccManager(4);
 WifiManager wifiManager;
 
 void initFileSystem();
+
+void turnoutManagerTask(void *pvParameters)
+{
+  for (;;)
+  {
+    turnoutManager.updateTurnoutPositions();
+    turnoutManager.checkForReboot();
+    vTaskDelay(1);
+  }
+}
+
+void dccManagerTask(void *pvParameters)
+{
+  for (;;)
+  {
+    dccManager.processDCC();
+    vTaskDelay(1);
+  }
+}
 
 void setup()
 {
@@ -33,7 +52,25 @@ void setup()
   {
     logger.log(INFO, "Starting with DCC enabled");
     dccManager.init();
+    xTaskCreatePinnedToCore(
+        dccManagerTask,     // Function to implement the task
+        "DCC Manager Task", // Name of the task
+        10000,                // Stack size in words
+        NULL,                 // Task input parameter
+        2,                    // Priority of the task
+        NULL,                 // Task handle
+        0                     // Core where the task should run
+    );
   }
+  xTaskCreatePinnedToCore(
+    turnoutManagerTask,       // Function to implement the task
+    "Turnout Manager Task",   // Name of the task
+    10000,                 // Stack size in words
+    NULL,                  // Task input parameter
+    1,                     // Priority of the task
+    NULL,                  // Task handle
+    1                      // Core where the task should run
+  );
 }
 
 void initFileSystem()
@@ -54,11 +91,6 @@ void loop()
   {
     wifiManager.processNextRequest();
   }
-  else
-  {
-    dccManager.processDCC();
-  }
-  //turnoutManager.updateTurnoutPositions();
-  turnoutManager.checkForReboot();
-  //vTaskDelay(1);
+  
+  vTaskDelay(1);
 }
