@@ -9,7 +9,7 @@ bool wifiEnabled = false;
 
 Elog logger;
 TurnoutManager turnoutManager;
-DCCManager dccManager(4);
+DCCManager dccManager;
 WifiManager wifiManager;
 
 void initFileSystem();
@@ -26,16 +26,12 @@ void turnoutManagerTask(void *pvParameters)
 
 void dccManagerTask(void *pvParameters)
 {
-  for (;;)
-  {
-    dccManager.processDCC();
-    vTaskDelay(1);
-  }
+  dccManager.processDCC();
 }
 
 void setup()
 {
-  Serial.begin(115200);
+  Serial.begin(460800);
   logger.addSerialLogging(Serial, "Main", DEBUG);
 
   turnoutManager.init();

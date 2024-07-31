@@ -19,32 +19,33 @@ public:
             uint8_t spacingBit2 : 1;    // 1 bit
             uint8_t errorDetection : 8; // 8 bits (XOR of address and instruction)
             uint8_t endBit : 1;         // 1 bit
-            uint32_t unused : 26;        // Padding to fill 64 bits
+            uint32_t unused : 26;       // Padding to fill 64 bits
         };
-        struct
-        {
-            uint32_t bits[2]; // Array of 64 bits packed into 2 uint32_t
-        };
+        uint64_t raw; // Raw 64-bit representation
     };
 #pragma pop // Restore default packing
 
-    DCCManager(uint8_t dccPin);
+    DCCManager();
     void init();
     void processDCC();
-    static constexpr int BIT_1_MIN = 150;
-    static constexpr int BIT_1_MAX = 240;
-    static constexpr int BIT_0_MIN = 90;
-    static constexpr int BIT_0_MAX = 130;
+    static constexpr int BIT_1_MIN = 95;
+    static constexpr int BIT_1_MAX = 130;
+    static constexpr int BIT_0_MIN = 45;
+    static constexpr int BIT_0_MAX = 75;
     static constexpr int DCC_MIN_PACKET_LEN = 38;
 
 private:
     uint8_t _dccPin;
+    uint64_t _bitBuffer = 0;
+    int _bitCount = 0;
 
-    static const int BUFFER_SIZE = 512; // Size of the circular buffer
+    void addBit(int bit);
+    bool checkForValidPacket();
+    void resetBuffer();
     static bool checkPacketIntegrity(DCCPacket &packet);
     static uint8_t calculateXOR(uint8_t address, uint8_t instruction);
-    static bool isValidPacket(int arr[], int length);
-    static DCCPacket extractPacket(int arr[]);
+    static bool isValidPacket(uint64_t bits);
+    static DCCPacket extractPacket(uint64_t bits);
 };
 
 #endif // DCCMANAGER_H
